@@ -35,7 +35,7 @@ Monitoring, restore, release and the report are plain code.
 
 Run `docker compose down` to stop the services. The `incident-data` volume retains the probe history. To change the starting slot or probe interval, copy `.env.example` to `.env` and edit the values.
 
-## Demo setup
+## Before the demo
 
 1. Use an up-to-date local `main`. The version switch takes its first healthy version from it.
 
@@ -46,7 +46,11 @@ Run `docker compose down` to stop the services. The `incident-data` volume retai
    git rev-parse origin/fault/bad-checkout
    ```
 
-2. Copy `.env.example` to `.env` and fill in these values.
+2. Copy the settings file and fill in these values.
+
+   ```sh
+   cp .env.example .env
+   ```
 
    | Key | Value |
    | --- | --- |
@@ -54,24 +58,24 @@ Run `docker compose down` to stop the services. The `incident-data` volume retai
    | `TAVILY_API_KEY` | Web search. Without it, search falls back to Tavily's rate-limited keyless mode |
    | `PHOENIX_BAD_REV` | The SHA that `git rev-parse` printed above |
 
-   The fault branch is only ever deployed by the demo. Never merge it.
+   The fault lives only on `fault/bad-checkout`. The demo deploys it, and it is never merged.
 
-3. Build the images once, with ports 3000, 8000 and 8080 free.
+3. Build the images, start from a healthy shop, and check everything. Go on stage only on **GO**.
 
    ```sh
    docker compose build
-   ```
-
-## Run the demo
-
-1. Start from a healthy shop. This **deletes this project's incident history and candidate fixes**.
-
-   ```sh
    ./scripts/reset.sh
+   ./scripts/preflight.sh
    ```
 
-2. Open [localhost:3000](http://localhost:3000). The recorded story, with no live services, is at [localhost:3000/?mock=1](http://localhost:3000/?mock=1).
-3. Press **BREAK** on the dashboard, or send the request.
+   `reset.sh` **deletes this project's incident history and candidate fixes**.
+
+## Demo order
+
+BREAK → wait for **Fix verified** → judge's bad candidate → Approve → optionally BREAK again.
+
+1. Open [localhost:3000](http://localhost:3000).
+2. Press **BREAK** on the dashboard, or send the request.
 
    ```sh
    curl -X POST 127.0.0.1:8000/chaos/break -H 'Content-Type: application/json' -d '{"fault":"bad_commit"}'
@@ -81,7 +85,7 @@ Run `docker compose down` to stop the services. The `incident-data` volume retai
    Invoke-RestMethod http://127.0.0.1:8000/chaos/break -Method Post -ContentType 'application/json' -Body '{"fault":"bad_commit"}'
    ```
 
-4. After checkout is restored, submit a flawed fix as the judge. The verifier must reject it. On a free model tier, wait for **Fix verified** first, because both checks share one rate limit.
+3. After **Fix verified**, submit a flawed fix as the judge. The verifier must reject it. The dashboard button waits for the verified fix, so both checks do not compete for one model quota.
 
    ```sh
    curl -X POST 127.0.0.1:8000/chaos/bad-candidate
@@ -91,7 +95,7 @@ Run `docker compose down` to stop the services. The `incident-data` volume retai
    Invoke-RestMethod http://127.0.0.1:8000/chaos/bad-candidate -Method Post
    ```
 
-5. Press **Approve release** when a fix is verified, or send its candidate ID. Approving anything else returns 409.
+4. Press **Approve release** when a fix is verified, or send its candidate ID. Approving anything else returns 409.
 
    ```sh
    curl 127.0.0.1:8000/incidents/current
@@ -103,7 +107,47 @@ Run `docker compose down` to stop the services. The `incident-data` volume retai
    Invoke-RestMethod http://127.0.0.1:8000/incidents/<incident-id>/approve -Method Post -ContentType 'application/json' -Body '{"candidate_id":"<incident-id>-c1"}'
    ```
 
-6. Press **View report**. To run the demo again, go back to step 1.
+5. Press **View report**. The incident closes after the release, and **BREAK** works again without a reset.
+
+To prove that a restarted brain resumes, run this with no incident open. It breaks checkout itself and leaves a verified fix to approve.
+
+```sh
+./scripts/restart_check.sh
+```
+
+## Fallback
+
+If the network or the model is down, open [localhost:3000/?replay=recorded](http://localhost:3000/?replay=recorded). It plays the recorded events of one real run, with a permanent **REPLAY** banner and every control disabled. [localhost:3000/?mock=1](http://localhost:3000/?mock=1) plays invented events under a **SIMULATED DATA** banner.
+
+To record another run, use its incident ID and rebuild the dashboard.
+
+```sh
+./scripts/record_run.sh <incident-id>
+docker compose build dashboard
+```
+
+## Ports
+
+| Setting in `.env` | Default | Service |
+| --- | --- | --- |
+| `PHOENIX_SWITCH_PORT` | 8080 | Version switch |
+| `PHOENIX_BRAIN_PORT` | 8000 | Brain |
+| `PHOENIX_DASHBOARD_PORT` | 3000 | Dashboard |
+
+The brain accepts browser requests from the dashboard's port. Set `PHOENIX_DASHBOARD_ORIGINS` to allow other addresses. After changing a port, run `docker compose build dashboard` and `docker compose up -d`. The links in this file use the defaults.
+
+## Troubleshooting
+
+| Problem | What to do |
+| --- | --- |
+| "Waiting for model quota" | Wait. Agents share `PHOENIX_LLM_RPM` calls a minute and retry on their own |
+| "Daily free quota is used up" | Use another key, set `ANTHROPIC_API_KEY` as the backup, or show the replay |
+| A port is taken | Stop the other app, or change the port as described under [Ports](#ports) |
+| Preflight says local main differs | `git switch main && git pull --ff-only`, then `./scripts/reset.sh` |
+| Preflight says an incident is open | Approve its fix, or run `./scripts/reset.sh` |
+| `PHOENIX_BAD_REV` is not a commit here | `git fetch origin fault/bad-checkout` and copy its full SHA into `.env` |
+| BREAK stays disabled | An incident is open. Finish it, or run `./scripts/reset.sh` |
+| The incident is escalated | Checkout stays on the healthy version and the incident closes. BREAK again to retry |
 
 ### Docker Engine in Ubuntu on Windows
 
@@ -157,6 +201,9 @@ flowchart LR
 | `services/brain/` | Python 3.11 probe, incident engine, release runner, AI agents, lab and report |
 | `apps/dashboard/` | Next.js 16, TypeScript, and Tailwind war room |
 | `scripts/reset.sh` | Returns the demo to a healthy shop |
+| `scripts/preflight.sh` | Prints GO or NO-GO before the demo |
+| `scripts/restart_check.sh` | Proves that a restarted brain resumes |
+| `scripts/record_run.sh` | Records a real run for the replay |
 | `compose.yaml` | Local service definitions, startup checks, ports, and the SQLite volume |
 
 ShopLite and the dashboard use their npm lockfiles. The switch and brain use the Python dependencies in `services/requirements.lock`.
