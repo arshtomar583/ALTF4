@@ -41,14 +41,14 @@ export function Markdown({ text }: { text: string }) {
       blocks.push(<Code key={key} text={body.join("\n")} diff={fence[2] === "diff"} />);
     } else if (heading) {
       index++;
-      const size = heading[1].length === 1 ? "text-2xl" : heading[1].length === 2 ? "text-xl" : "text-base";
+      const size = heading[1].length === 1 ? "text-state" : heading[1].length === 2 ? "text-title" : "text-base";
       blocks.push(<h3 key={key} className={`mt-5 mb-1 font-semibold ${size}`}>{inline(heading[2])}</h3>);
     } else if (line.startsWith("|")) {
       const [head, , ...rows] = take((item) => item.startsWith("|"));
       blocks.push(
         <div key={key} className="my-2 overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="text-sm text-dim">
+            <thead className="text-text-3">
               <tr>{cells(head).map((cell, column) => <th key={column} className="pr-4 pb-1 font-medium">{inline(cell)}</th>)}</tr>
             </thead>
             <tbody>

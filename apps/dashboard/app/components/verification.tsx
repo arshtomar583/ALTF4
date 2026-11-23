@@ -1,91 +1,108 @@
-"use client";
+import { memo } from "react";
 
-import { useState } from "react";
-
-import { approvable, type Candidate, type IncidentState } from "../lib/incident-state";
-import { post } from "../lib/use-incident";
-import { Panel, Waiting } from "./ui";
+import type { Candidate } from "../lib/incident-state";
+import type { Controls } from "../lib/use-controls";
+import { Check, Cross, Warn } from "./icons";
+import { Dot, Panel, Skeleton } from "./ui";
 
 function Mark({ ok, pending = false }: { ok: boolean | null; pending?: boolean }) {
-  if (ok === null) return <span className="text-dim">{pending ? "…" : "–"}</span>;
+  if (ok === null) return <span className="text-text-3">{pending ? "…" : "—"}</span>;
   return (
-    <span className={ok ? "text-good" : "text-bad"}>
-      <span aria-hidden>{ok ? "✓" : "✗"}</span> <span className="text-sm">{ok ? "pass" : "fail"}</span>
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+      {ok ? <Check className="h-4 w-4 text-ok" /> : <Cross className="h-4 w-4 text-down" />}
+      <span className="text-meta">{ok ? "pass" : "fail"}</span>
+    </span>
+  );
+}
+
+function Name({ candidate }: { candidate: Candidate }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+      <span className="tnum text-text">{candidate.label.replace("judge ", "j")}</span>
+      {candidate.by === "judge" ? <span className="rounded-sm border border-text-3 px-1 text-meta leading-tight text-text-2">JUDGE</span> : null}
     </span>
   );
 }
 
 function Stamp({ candidate }: { candidate: Candidate }) {
   const result = candidate.verification;
-  if (!result) return <p className="waiting text-dim">{candidate.label}: being verified…</p>;
+  if (!result) {
+    return (
+      <div className="min-w-0">
+        <p className="text-text-2">Verifying <Name candidate={candidate} />…</p>
+      </div>
+    );
+  }
   const ok = result.verdict === "VERIFIED";
+  const Icon = ok ? Check : Cross;
   return (
-    <div key={candidate.id} className="stamp min-h-0">
-      <p className={`inline-block border-2 px-2 py-0.5 text-xl font-bold tracking-wide ${ok ? "border-good text-good" : "border-bad text-bad"}`}>
-        {ok ? "✓" : "✗"} {result.verdict}
+    <div className="min-w-0">
+      <p
+        className={`stamp mt-2 mb-2.5 inline-flex origin-left items-center gap-1.5 rounded-sm border-2 px-2 text-state leading-tight font-semibold ${
+          ok ? "border-ok text-ok" : "border-down text-down"
+        }`}
+      >
+        <Icon className="h-5 w-5" /> {result.verdict}
       </p>
-      <p className="mt-1 line-clamp-2 text-sm leading-snug">
-        <strong>{candidate.label}:</strong> {result.reason}
+      <p className="line-clamp-2 text-meta leading-snug text-text-2" title={result.reason}>
+        <Name candidate={candidate} /> {result.reason}
       </p>
     </div>
   );
 }
 
-export function Verification({ state, active, recorded }: { state: IncidentState; active: boolean; recorded: boolean }) {
-  const [sending, setSending] = useState<string | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
-  const candidate = approvable(state);
+const ROWS = [
+  ["Regression check", "candidate"],
+  ["Unit tests", "unit_tests"],
+  ["Diff review", "diff_review_ok"],
+] as const;
+
+export const Verification = memo(function Verification({ candidates, active, spot, lit, dim, controls }: {
+  candidates: Candidate[];
+  active: boolean;
+  spot: string;
+  lit: boolean;
+  dim: boolean;
+  controls: Controls;
+}) {
   // The newest candidates matter most, and four columns fit the projector.
-  const shown = state.candidates.slice(-4);
-  const latest = state.candidates.findLast((item) => item.verification) ?? state.candidates.at(-1);
-  const first = state.candidates.find((item) => item.verification)?.verification ?? null;
-  const releasing = state.phase === "releasing" || sending === candidate?.id;
-  const ready = candidate !== null && state.phase === "verified" && !state.closed && !releasing && !recorded;
-
-  async function approve() {
-    if (!candidate || !state.incidentId) return;
-    setSending(candidate.id);
-    setProblem(await post(`/incidents/${state.incidentId}/approve`, { candidate_id: candidate.id }));
-    setSending(null);
-  }
-
-  const rows = [
-    ["Regression check", "candidate"],
-    ["Shop's own tests", "unit_tests"],
-    ["Diff review", "diff_review_ok"],
-  ] as const;
-  const note = problem ?? state.releaseProblem;
-
+  const shown = candidates.slice(-4);
+  const answered = shown.filter((item) => item.verification);
+  const waiting = shown.findLast((item) => !item.verification);
+  const stamps = [...answered, ...(waiting ? [waiting] : [])].slice(-2);
+  const first = answered[0]?.verification ?? null;
+  const { approve } = controls;
   return (
-    <Panel title="Independent verification · Verifier">
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_17.5rem] gap-4 px-4 pt-1 pb-3">
+    <Panel
+      title={<span className="inline-flex items-center gap-2"><Dot actor="verifier" /> Independent verification</span>}
+      spot={spot}
+      lit={lit}
+      dim={dim}
+    >
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_24.5rem_9.5rem] gap-4 px-4 pt-1 pb-3">
         {shown.length === 0 ? (
-          <div className="-ml-4">
-            {active ? <Waiting text="Waiting for a candidate fix…" /> : <p className="px-4 pt-1 text-dim">Tests every proposed fix</p>}
-          </div>
+          <div className="-ml-4"><Skeleton text={active ? "Waiting for a candidate fix…" : "Tests every proposed fix"} /></div>
         ) : (
           <div className="min-h-0 overflow-auto" role="region" aria-label="Verification results" tabIndex={0}>
-            <table className="w-full text-left">
-              <thead className="text-sm text-dim">
+            <table className="w-full text-left leading-tight">
+              <thead>
                 <tr>
-                  <th className="py-0.5 pr-3 font-medium">Check</th>
-                  <th className="pr-3 font-medium">Broken</th>
-                  <th className="pr-3 font-medium">Healthy</th>
-                  {shown.map((item) => (
-                    <th key={item.id} className="pr-3 font-medium whitespace-nowrap text-ink">{item.label}</th>
-                  ))}
+                  <th className="pr-2 pb-1"><span className="label">Check</span></th>
+                  <th className="pr-2 pb-1"><span className="label">Broken</span></th>
+                  <th className="pr-2 pb-1"><span className="label">Healthy</span></th>
+                  {shown.map((item) => <th key={item.id} className="pr-2 pb-1 font-medium"><Name candidate={item} /></th>)}
                 </tr>
               </thead>
               <tbody>
-                {rows.map(([name, key]) => (
+                {ROWS.map(([name, key]) => (
                   <tr key={key} className="border-t border-line">
-                    <th className="py-0.5 pr-3 font-normal whitespace-nowrap">{name}</th>
-                    <td className="pr-3">{key === "candidate" ? <Mark ok={first ? first.broken === "pass" : null} /> : "–"}</td>
-                    <td className="pr-3">{key === "candidate" ? <Mark ok={first ? first.healthy === "pass" : null} /> : "–"}</td>
+                    <th className="py-1.5 pr-2 text-meta font-normal whitespace-nowrap">{name}</th>
+                    <td className="pr-2 align-middle">{key === "candidate" ? <Mark ok={first ? first.broken === "pass" : null} /> : <Mark ok={null} />}</td>
+                    <td className="pr-2 align-middle">{key === "candidate" ? <Mark ok={first ? first.healthy === "pass" : null} /> : <Mark ok={null} />}</td>
                     {shown.map((item) => {
                       const value = item.verification?.[key];
                       return (
-                        <td key={item.id} className="pr-3 whitespace-nowrap">
+                        <td key={item.id} className="pr-2">
                           <Mark ok={value === undefined ? null : value === true || value === "pass"} pending={value === undefined} />
                         </td>
                       );
@@ -96,23 +113,24 @@ export function Verification({ state, active, recorded }: { state: IncidentState
             </table>
           </div>
         )}
-        <div className="flex min-h-0 flex-col justify-between gap-2">
-          <div className="min-h-0 overflow-hidden">{latest ? <Stamp candidate={latest} /> : null}</div>
-          <div>
-            {note ? <p role="alert" className="mb-1 line-clamp-2 text-sm text-busy">⚠ {note}</p> : null}
-            <button
-              type="button"
-              onClick={approve}
-              disabled={!ready}
-              className={`h-10 w-full rounded-md border text-base font-semibold ${
-                ready ? "border-ink bg-ink text-ground" : "border-line text-dim"
-              }`}
-            >
-              {releasing ? "Releasing…" : state.phase === "recovered" ? "✓ Released" : "Approve release"}
-            </button>
-          </div>
+        <div className="grid min-h-0 grid-cols-2 gap-4">
+          {stamps.map((item) => <Stamp key={item.id} candidate={item} />)}
+        </div>
+        <div className="flex min-h-0 flex-col justify-end gap-1.5">
+          {approve.problem ? <p role="alert" className="line-clamp-3 text-meta leading-snug text-text"><Warn /> {approve.problem}</p> : null}
+          <button
+            type="button"
+            onClick={approve.run}
+            disabled={!approve.enabled}
+            className={`control relative min-h-12 w-full overflow-hidden rounded-control border font-semibold ${
+              approve.enabled ? "border-ok bg-ok text-bg" : "border-line text-text-3"
+            }`}
+          >
+            {approve.label}
+            {approve.busy ? <span aria-hidden className="progress absolute bottom-0 left-0 h-0.5 w-1/3 bg-ok" /> : null}
+          </button>
         </div>
       </div>
     </Panel>
   );
-}
+});

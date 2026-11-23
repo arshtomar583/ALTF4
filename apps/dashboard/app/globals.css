@@ -1,35 +1,73 @@
 @import "tailwindcss";
 
+:root {
+  color-scheme: dark;
+  --bg: #07090c;
+  --panel: #0e1218;
+  --panel-2: #131923;
+  --line: #1e2633;
+  --text: #e8ecf2;
+  --text-2: #a3adbd;
+  /* #6b7586 measures 4.05:1 on --panel; this is the nearest step that clears 4.5:1. */
+  --text-3: #7a8496;
+  --down: #f04444;
+  --fixing: #f5a524;
+  --ok: #22c55e;
+  --focus: #7aa2ff;
+  --agent-coordinator: #ff5a1f;
+  --agent-code: #3e63dd;
+  --agent-runtime: #5b7bea;
+  --agent-repair: #12a594;
+  --agent-verifier: #7c5cff;
+  /* 16px on a 1280 projector, 20px at 1920. Every size below is in rem. */
+  font-size: clamp(16px, 0.625vw + 8px, 22px);
+}
+
 @theme inline {
   --font-sans: var(--font-geist), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --color-ground: #0a0c10;
-  --color-panel: #12161d;
-  --color-line: #1f252f;
-  --color-ink: #e8ecf3;
-  --color-dim: #98a2b3;
-  --color-bad: #ff5c5c;
-  --color-busy: #f5b13d;
-  --color-good: #3ecf8e;
-}
-
-:root {
-  color-scheme: dark;
-  /* 16px on a 1280 projector, about 20px at 1920. */
-  font-size: clamp(16px, 0.6vw + 8.4px, 22px);
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-down: var(--down);
+  --color-fixing: var(--fixing);
+  --color-ok: var(--ok);
+  --text-meta: 0.8125rem;
+  --text-title: 1.25rem;
+  --text-state: 1.75rem;
+  --text-timer: 4rem;
+  --radius-panel: 0.625rem;
+  --radius-control: 0.5rem;
 }
 
 body {
-  background: var(--color-ground);
-  color: var(--color-ink);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-sans);
+  line-height: 1.5;
 }
 
-button:focus-visible,
-a:focus-visible,
-summary:focus-visible,
-[tabindex]:focus-visible {
-  outline: 2px solid var(--color-ink);
+.label {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.tnum {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -37,25 +75,134 @@ button:not(:disabled) {
   cursor: pointer;
 }
 
-@keyframes stamp {
-  from {
-    opacity: 0;
-    transform: scale(1.35);
-  }
+/* Colour never animates. Each mood is its own layer, and only opacity changes. */
+.mood {
+  opacity: 0;
+}
+
+.mood[data-on="true"] {
+  opacity: 1;
+}
+
+.diff-add {
+  background: color-mix(in srgb, var(--ok) 15%, transparent);
+}
+
+.diff-remove {
+  background: color-mix(in srgb, var(--down) 15%, transparent);
+}
+
+.stamp {
+  transform: rotate(-4deg);
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .mood {
+    transition: opacity 200ms ease-out;
+  }
+
+  .mood[data-settling="true"] {
+    transition-duration: 1200ms;
+  }
+
+  .mood[data-alarm="true"][data-on="true"] {
+    animation: alarm 420ms ease-in-out 3;
+  }
+
+  .bump {
+    animation: bump 120ms ease-out;
+  }
+
+  .ecg-step {
+    animation: ecg-step 420ms linear;
+  }
+
+  .appear {
+    animation: appear 200ms ease-out;
+  }
+
   .stamp {
     animation: stamp 180ms ease-out;
   }
 
-  .waiting {
-    animation: waiting 1.6s ease-in-out infinite alternate;
+  .thread {
+    animation: thread 600ms ease-out;
+  }
+
+  .working {
+    animation: working 900ms ease-in-out infinite alternate;
+  }
+
+  .progress {
+    animation: progress 1.1s ease-in-out infinite;
+  }
+
+  .control {
+    transition: opacity 120ms ease-out;
+  }
+
+  .control:not(:disabled):hover {
+    opacity: 0.85;
+  }
+
+  .stage {
+    transition: opacity 300ms ease-out;
+  }
+
+  .stage[data-dim="true"]:not(:hover):not(:focus-within) {
+    opacity: 0.55;
   }
 }
 
-@keyframes waiting {
+@keyframes alarm {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes bump {
   from {
-    opacity: 0.45;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes ecg-step {
+  from {
+    transform: translateX(20px);
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem) rotate(0deg);
+  }
+}
+
+@keyframes thread {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes working {
+  to {
+    opacity: 0.35;
+  }
+}
+
+@keyframes progress {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(300%);
   }
 }

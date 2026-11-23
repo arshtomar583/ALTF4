@@ -18,6 +18,11 @@ export type Candidate = {
   verification: Verification | null;
 };
 
+export const AGENT_IDS = ["coordinator", "code_investigator", "runtime_investigator", "repair", "verifier"] as const;
+export type AgentId = (typeof AGENT_IDS)[number];
+export type AgentStatus = "idle" | "working" | "done" | "failed";
+export type Roster = Record<AgentId, AgentStatus>;
+
 export type Beat = Probe & { id: number; outage: boolean };
 export type Marker = { id: number; label: string };
 export type FeedItem = PhoenixEvent;
@@ -30,6 +35,8 @@ export type IncidentState = {
   feed: FeedItem[];
   slot: string | null;
   revision: string | null;
+  probedAt: number | null;
+  agents: Roster;
   breakId: number | null;
   openedAt: number | null;
   restoredAt: number | null;
@@ -37,7 +44,7 @@ export type IncidentState = {
   failedCheckouts: number;
   findings: { code: Finding | null; runtime: Finding | null };
   decision: Decision | null;
-  escalation: string | null;
+  escalation: { reason: string; pack: string } | null;
   candidates: Candidate[];
   releaseProblem: string | null;
   report: { markdown: string; prUrl: string | null } | null;
@@ -46,7 +53,8 @@ export type IncidentState = {
 };
 
 export const BEATS = 60;
-const FEED_LIMIT = 200;
+// With the beats, at most 300 events stay in memory.
+const FEED_LIMIT = 240;
 
 export const initialState: IncidentState = {
   phase: "healthy",
@@ -56,6 +64,8 @@ export const initialState: IncidentState = {
   feed: [],
   slot: null,
   revision: null,
+  probedAt: null,
+  agents: { coordinator: "idle", code_investigator: "idle", runtime_investigator: "idle", repair: "idle", verifier: "idle" },
   breakId: null,
   openedAt: null,
   restoredAt: null,
@@ -79,8 +89,8 @@ export function reducer(state: IncidentState, action: Action): IncidentState {
 
 /** Everything that belongs to one incident starts over; the heartbeat and the feed carry on. */
 function fresh(state: IncidentState): IncidentState {
-  const { beats, markers, feed, slot, revision } = state;
-  return { ...initialState, beats, markers, feed, slot, revision };
+  const { beats, markers, feed, slot, revision, probedAt } = state;
+  return { ...initialState, beats, markers, feed, slot, revision, probedAt };
 }
 
 function mark(state: IncidentState, id: number, label: string): IncidentState {
@@ -95,9 +105,13 @@ function label(id: string, by: "agent" | "judge", candidates: Candidate[]): stri
 
 function apply(previous: IncidentState, event: PhoenixEvent): IncidentState {
   const at = Date.parse(event.occurred_at);
-  if (event.type === "checkout.probe") return probe(previous, event.id, event.data);
+  if (event.type === "checkout.probe") return probe(previous, event.id, at, event.data);
 
-  const state: IncidentState = { ...previous, feed: [event, ...previous.feed].slice(0, FEED_LIMIT) };
+  const state: IncidentState = {
+    ...previous,
+    feed: [event, ...previous.feed].slice(0, FEED_LIMIT),
+    agents: progress(previous.agents, event),
+  };
   switch (event.type) {
     case "chaos.break":
       return mark({ ...fresh(state), breakId: event.id }, event.id, "BREAK");
@@ -107,11 +121,11 @@ function apply(previous: IncidentState, event: PhoenixEvent): IncidentState {
       return mark(
         { ...base, phase: "down", incidentId: event.incident_id, openedAt: at, breakId: base.breakId ?? event.id },
         event.id,
-        "opened",
+        "OPENED",
       );
     }
     case "incident.restored":
-      return mark({ ...state, phase: "fixing", restoredAt: at }, event.id, "restored");
+      return mark({ ...state, phase: "fixing", restoredAt: at }, event.id, "RESTORED");
     case "system.recovered":
       return { ...state, recovered: { id: event.id, at, step: event.data.last_step } };
     case "finding.added": {
@@ -121,7 +135,7 @@ function apply(previous: IncidentState, event: PhoenixEvent): IncidentState {
     case "decision.made":
       return { ...state, decision: event.data };
     case "incident.escalated":
-      return { ...state, escalation: event.data.reason, phase: state.verifiedAt ? state.phase : "escalated" };
+      return { ...state, escalation: { reason: event.data.reason, pack: event.data.evidence_pack_md }, phase: state.verifiedAt ? state.phase : "escalated" };
     case "candidate.proposed": {
       const { candidate_id: id, by, rev, diff } = event.data;
       if (state.candidates.some((candidate) => candidate.id === id)) return state;
@@ -144,7 +158,7 @@ function apply(previous: IncidentState, event: PhoenixEvent): IncidentState {
       return { ...state, phase: "releasing", releaseProblem: null };
     case "release.done":
       return event.data.ok
-        ? mark({ ...state, phase: "recovered" }, event.id, "released")
+        ? mark({ ...state, phase: "recovered" }, event.id, "RELEASED")
         : { ...state, phase: "verified", releaseProblem: event.data.reason ?? "The release stopped" };
     case "incident.closed":
       return { ...state, closed: true, phase: event.data.status === "resolved" ? "recovered" : "escalated" };
@@ -155,7 +169,19 @@ function apply(previous: IncidentState, event: PhoenixEvent): IncidentState {
   }
 }
 
-function probe(state: IncidentState, id: number, data: Probe): IncidentState {
+/** What each agent is doing, read only from what it reported. */
+function progress(agents: Roster, event: PhoenixEvent): Roster {
+  const actor = AGENT_IDS.find((id) => id === event.actor);
+  if (!actor) return agents;
+  let status: AgentStatus = agents[actor];
+  if (event.type === "agent.tool") status = "working";
+  // A token count closes a run; whether it succeeded is said by the event that follows.
+  if (event.type === "agent.note" && !event.data.usage) status = event.data.error ? "failed" : "working";
+  if (/^(finding\.added|decision\.made|incident\.escalated|candidate\.proposed|verification\.done)$/.test(event.type)) status = "done";
+  return status === agents[actor] ? agents : { ...agents, [actor]: status };
+}
+
+function probe(state: IncidentState, id: number, at: number, data: Probe): IncidentState {
   const counting = state.breakId !== null && state.restoredAt === null;
   const down = !data.ok && counting;
   const phase = down && state.phase === "healthy" ? "down" : state.phase;
@@ -164,6 +190,7 @@ function probe(state: IncidentState, id: number, data: Probe): IncidentState {
     ...state,
     phase,
     beats,
+    probedAt: at,
     markers: state.markers.filter((marker) => marker.id >= beats[0].id),
     slot: data.slot ?? state.slot,
     revision: data.revision ?? state.revision,

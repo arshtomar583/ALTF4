@@ -1,40 +1,74 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
-import type { IncidentState, Phase } from "../lib/incident-state";
+import type { Phase } from "../lib/incident-state";
 import type { Connection } from "../lib/use-incident";
+import { Check, Clock, Cross, Page, Warn } from "./icons";
 
-const PHASES: Record<Phase, { icon: string; text: string; tone: string }> = {
-  healthy: { icon: "✓", text: "Healthy", tone: "text-ink" },
-  down: { icon: "✗", text: "Checkout down", tone: "text-bad" },
-  fixing: { icon: "⚠", text: "Restored, fixing", tone: "text-busy" },
-  verified: { icon: "✓", text: "Fix verified", tone: "text-good" },
-  releasing: { icon: "⚠", text: "Releasing", tone: "text-busy" },
-  recovered: { icon: "✓", text: "Recovered", tone: "text-good" },
-  escalated: { icon: "⚠", text: "Escalated", tone: "text-busy" },
+type Mood = "down" | "fixing" | "ok";
+type PhaseView = { text: string; mood: Mood | null; Icon: typeof Check };
+
+const PHASES: Record<Phase, PhaseView> = {
+  healthy: { text: "Healthy", mood: null, Icon: Check },
+  down: { text: "Checkout down", mood: "down", Icon: Cross },
+  fixing: { text: "Restored — fixing", mood: "fixing", Icon: Warn },
+  verified: { text: "Fix verified", mood: "ok", Icon: Check },
+  releasing: { text: "Releasing", mood: "ok", Icon: Clock },
+  recovered: { text: "Recovered", mood: "ok", Icon: Check },
+  escalated: { text: "Escalated", mood: "fixing", Icon: Warn },
 };
 
+const FILL: Record<Mood, string> = { down: "bg-down", fixing: "bg-fixing", ok: "bg-ok" };
+const PILL: Record<Mood, string> = {
+  down: "border-down text-down",
+  fixing: "border-fixing text-fixing",
+  ok: "border-ok text-ok",
+};
+const MOODS: Mood[] = ["down", "fixing", "ok"];
+
 function duration(start: number | null, end: number | null, now: number): string {
-  if (start === null) return "–";
+  if (start === null) return "—";
   const seconds = Math.max(0, ((end ?? now) - start) / 1000);
   if (seconds < 100) return `${seconds.toFixed(1)}s`;
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 }
 
-function Metric({ label, value, tone = "text-ink" }: { label: string; value: string; tone?: string }) {
+function Timer({ label, value, final }: { label: string; value: string; final: boolean }) {
   return (
     <div className="min-w-0">
-      <dt className="text-sm text-dim">{label}</dt>
-      <dd className={`font-mono text-5xl leading-none font-medium tabular-nums ${tone}`}>{value}</dd>
+      <dt className="label flex items-center gap-1.5 whitespace-nowrap">
+        {label}
+        {final ? (
+          <span className="inline-flex items-center gap-1 tracking-normal text-text-2 normal-case">
+            <Check /> final
+          </span>
+        ) : null}
+      </dt>
+      <dd className={`tnum text-timer leading-[1.1] font-medium whitespace-nowrap ${value === "—" ? "text-text-3" : "text-text"}`}>
+        {value}
+      </dd>
     </div>
   );
 }
 
-export function StatusStrip({ state, connection }: { state: IncidentState; connection: Connection }) {
+export const StatusStrip = memo(function StatusStrip(props: {
+  phase: Phase;
+  closed: boolean;
+  openedAt: number | null;
+  restoredAt: number | null;
+  verifiedAt: number | null;
+  failed: number;
+  connection: Connection;
+  canReport: boolean;
+  onReport: () => void;
+  onHelp: () => void;
+}) {
+  const { phase, closed, openedAt, restoredAt, verifiedAt, failed, connection } = props;
   const [now, setNow] = useState(0);
   // An escalated incident has no verified fix coming, so its clock shows no number.
-  const running = state.openedAt !== null && state.verifiedAt === null && state.phase !== "escalated";
+  const abandoned = phase === "escalated" && verifiedAt === null;
+  const running = openedAt !== null && verifiedAt === null && !abandoned;
   useEffect(() => {
     if (!running) return;
     const tick = () => setNow(Date.now());
@@ -43,41 +77,75 @@ export function StatusStrip({ state, connection }: { state: IncidentState; conne
     return () => window.clearInterval(timer);
   }, [running]);
 
-  const phase = PHASES[state.phase];
-  const stopped = state.phase === "escalated" && state.verifiedAt === null;
+  const { text, mood, Icon } = PHASES[phase];
+  const live = closed ? null : mood;
   return (
-    <header className="grid h-24 shrink-0 grid-cols-[minmax(0,1.35fr)_repeat(3,minmax(0,1fr))_minmax(0,0.85fr)] items-center gap-5 border-b border-line px-5">
-      <div>
-        <h1 className="text-sm font-semibold tracking-[0.18em] text-dim">PHOENIX</h1>
-        <p aria-live="polite" className={`mt-1 text-2xl font-semibold whitespace-nowrap ${phase.tone}`}>
-          <span aria-hidden>{phase.icon}</span> {phase.text}
-        </p>
-        <p role="status" className={`text-sm ${connection === "Reconnecting" ? "text-busy" : "text-dim"}`}>
-          {connection === "Reconnecting" ? "⚠ Reconnecting" : connection}
+    <header className="relative grid h-25.5 shrink-0 grid-cols-[minmax(0,1fr)_13.5rem_15.5rem_8.5rem_9.5rem] items-center gap-x-4 px-5">
+      <div className="min-w-0">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-base font-semibold tracking-[0.18em]">PHOENIX</h1>
+          <p className={`text-meta ${connection === "Reconnecting" ? "text-fixing" : "text-text-2"}`}>
+            {connection === "Reconnecting" ? <Warn /> : null} {connection}
+          </p>
+        </div>
+        <p className="relative mt-1.5 inline-flex rounded-control border border-line text-state leading-tight font-semibold">
+          <span className="inline-flex items-center gap-2 px-3 py-1 whitespace-nowrap text-text">
+            <Icon className="h-6 w-6" /> {text}
+          </span>
+          {MOODS.map((name) => (
+            <span
+              key={name}
+              aria-hidden
+              data-on={live === name}
+              data-alarm={name === "down"}
+              data-settling={closed}
+              className={`mood absolute -inset-px inline-flex items-center gap-2 rounded-control border bg-panel px-3 py-1 whitespace-nowrap ${PILL[name]}`}
+            >
+              <Icon className="h-6 w-6" /> {text}
+            </span>
+          ))}
         </p>
       </div>
       <dl className="contents">
-        <Metric
-          label="Time to restore"
-          value={duration(state.openedAt, state.restoredAt, now)}
-          tone={state.openedAt === null ? "text-dim" : state.restoredAt === null ? "text-bad" : "text-ink"}
-        />
-        <Metric
-          label="Time to verified fix"
-          value={stopped ? "–" : duration(state.openedAt, state.verifiedAt, now)}
-          tone={state.verifiedAt !== null ? "text-good" : state.restoredAt !== null && !stopped ? "text-busy" : "text-dim"}
-        />
-        <Metric
-          label="Failed checkouts"
-          value={String(state.failedCheckouts)}
-          tone={state.phase === "down" ? "text-bad" : state.failedCheckouts ? "text-ink" : "text-dim"}
-        />
+        <Timer label="Time to restore" value={duration(openedAt, restoredAt, now)} final={restoredAt !== null} />
+        <Timer label="Time to verified fix" value={abandoned ? "—" : duration(openedAt, verifiedAt, now)} final={verifiedAt !== null} />
         <div className="min-w-0">
-          <dt className="text-sm text-dim">Live slot</dt>
-          <dd className="truncate font-mono text-2xl leading-tight">{state.slot?.toUpperCase() ?? "–"}</dd>
-          <dd className="truncate font-mono text-sm text-dim">{state.revision?.slice(0, 7) ?? "no revision yet"}</dd>
+          <dt className="label flex items-center gap-1.5 whitespace-nowrap">
+            Failed
+            {restoredAt !== null ? (
+              <span className="inline-flex items-center gap-1 tracking-normal text-text-2 normal-case"><Check /> final</span>
+            ) : null}
+          </dt>
+          <dd className={`tnum text-timer leading-[1.1] font-medium ${failed ? "text-text" : "text-text-3"}`}>
+            <span key={failed} className={`inline-block ${failed ? "bump" : ""}`}>{failed}</span>
+            <span className="sr-only"> failed checkouts</span>
+          </dd>
         </div>
       </dl>
+      <div className="flex flex-col gap-1">
+        <button
+          type="button"
+          disabled={!props.canReport}
+          onClick={props.onReport}
+          className="control inline-flex h-11 items-center gap-2 rounded-control border border-line px-3 text-meta text-text disabled:text-text-3"
+        >
+          <Page /> {props.canReport ? "View report" : "No report yet"}
+        </button>
+        <button type="button" onClick={props.onHelp} className="control h-11 rounded-control px-3 text-meta text-text-2">
+          <kbd className="tnum">?</kbd> Shortcuts
+        </button>
+      </div>
+      <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-line" />
+      {MOODS.map((name) => (
+        <div
+          key={name}
+          aria-hidden
+          data-on={live === name}
+          data-alarm={name === "down"}
+          data-settling={closed}
+          className={`mood absolute inset-x-0 bottom-0 h-0.5 ${FILL[name]}`}
+        />
+      ))}
     </header>
   );
-}
+});
