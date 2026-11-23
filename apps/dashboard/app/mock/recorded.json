@@ -1,1 +1,2125 @@
-{"recorded_at": null, "incident_id": null, "events": []}
+{
+ "recorded_at": "2026-11-23T09:02:20.588666+00:00",
+ "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+ "events": [
+  {
+   "id": 9,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:20.588666+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "a",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 10,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:22.597368+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "a",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 11,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:24.606860+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "a",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 12,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:26.614419+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "a",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 13,
+   "type": "chaos.break",
+   "occurred_at": "2026-11-23T09:02:26.931274+00:00",
+   "incident_id": null,
+   "actor": "chaos",
+   "summary": "Checkout break requested",
+   "data": {}
+  },
+  {
+   "id": 14,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:28.626755+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout failed",
+   "data": {
+    "ok": false,
+    "status_code": 500,
+    "latency_ms": 9,
+    "slot": "a",
+    "revision": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 15,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:30.632805+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "a",
+    "revision": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 16,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:32.641882+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout failed",
+   "data": {
+    "ok": false,
+    "status_code": 500,
+    "latency_ms": 6,
+    "slot": "a",
+    "revision": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 17,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:34.650355+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 6,
+    "slot": "a",
+    "revision": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 18,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:36.658325+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout failed",
+   "data": {
+    "ok": false,
+    "status_code": 500,
+    "latency_ms": 6,
+    "slot": "a",
+    "revision": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 19,
+   "type": "incident.opened",
+   "occurred_at": "2026-11-23T09:02:36.833916+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "coordinator",
+   "summary": "Checkout incident opened on slot A",
+   "data": {
+    "broken_slot": "a",
+    "broken_rev": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62",
+    "healthy_rev": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "failing_request": {
+     "method": "POST",
+     "path": "/checkout",
+     "body": {
+      "sku": "demo-mug",
+      "quantity": 1
+     }
+    }
+   }
+  },
+  {
+   "id": 20,
+   "type": "incident.restored",
+   "occurred_at": "2026-11-23T09:02:37.118761+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "coordinator",
+   "summary": "Restored checkout on slot B",
+   "data": {
+    "active_slot": "b",
+    "active_rev": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "seconds_to_restore": 0.285
+   }
+  },
+  {
+   "id": 21,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:38.665222+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 22,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:40.676588+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 23,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:42.686058+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 24,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:44.694209+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 3,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 25,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:46.724072+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "code_investigator",
+   "summary": "Bisecting 1 commit against the failing checkout\u2026",
+   "data": {}
+  },
+  {
+   "id": 26,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:46.734554+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 13,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 27,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:46.864957+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Reading what slot A printed as it failed\u2026",
+   "data": {}
+  },
+  {
+   "id": 28,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:02:46.875801+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Runs container logs",
+   "data": {
+    "tool": "container_logs",
+    "args": {
+     "slot": "a"
+    },
+    "ok": true,
+    "result_excerpt": "{\"source\": \"lab replay of the failing request on 0b0673f7378b\", \"logs\": \"ShopLite listening on port 3003 at revision 0b0673f7378bb3bad237329bf46e6b4c3ab22b62\\nTypeError: Cannot read properties of undefined (reading 'code')\\n    at file:///data/lab/0b0673f7378b/services/shoplite/src/shop.js:24:40\\n \u2026",
+    "usage": {
+     "in": 1152,
+     "out": 203,
+     "calls": 1
+    }
+   }
+  },
+  {
+   "id": 29,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:47.073229+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "code_investigator",
+   "summary": "Checkout first breaks at 0b0673f: refactor: accept lowercase discount codes",
+   "data": {}
+  },
+  {
+   "id": 30,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:02:47.080568+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "code_investigator",
+   "summary": "Runs git bisect",
+   "data": {
+    "tool": "git_bisect",
+    "args": {
+     "good": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+     "bad": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62"
+    },
+    "ok": true,
+    "result_excerpt": "{\"first_bad_rev\": \"0b0673f7378bb3bad237329bf46e6b4c3ab22b62\", \"checks\": [{\"rev\": \"8edb2017ec2195835c5d19e68aec9fcc9ab7284a\", \"status\": 200, \"bad\": false}, {\"rev\": \"0b0673f7378bb3bad237329bf46e6b4c3ab22b62\", \"status\": 500, \"bad\": true}], \"diff\": \"commit 0b0673f7378bb3bad237329bf46e6b4c3ab22b62\\nAuth\u2026",
+    "usage": {
+     "in": 1023,
+     "out": 182,
+     "calls": 1
+    }
+   }
+  },
+  {
+   "id": 31,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:48.222560+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Looking up this exact error on the web\u2026",
+   "data": {}
+  },
+  {
+   "id": 32,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:48.234454+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Comparing configuration with the healthy version\u2026",
+   "data": {}
+  },
+  {
+   "id": 33,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:02:48.262077+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Runs config diff",
+   "data": {
+    "tool": "config_diff",
+    "args": {
+     "a": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+     "b": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62"
+    },
+    "ok": true,
+    "result_excerpt": "{\"config_changed\": false, \"files_compared\": [\"services/shoplite/package-lock.json\", \"services/shoplite/package.json\"], \"changes\": []}",
+    "usage": {
+     "in": 2691,
+     "out": 562,
+     "calls": 2
+    }
+   }
+  },
+  {
+   "id": 34,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:48.730339+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 3,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 35,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:02:48.756141+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Tries web search, but it fails",
+   "data": {
+    "tool": "web_search",
+    "args": {
+     "query": "TypeError: Cannot read properties of undefined reading 'code'"
+    },
+    "ok": false,
+    "result_excerpt": "{\"error\": \"Keyless Tavily answered 429\"}",
+    "usage": {
+     "in": 2691,
+     "out": 562,
+     "calls": 2
+    }
+   }
+  },
+  {
+   "id": 36,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:02:49.766978+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "code_investigator",
+   "summary": "Runs git show",
+   "data": {
+    "tool": "git_show",
+    "args": {
+     "rev": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62"
+    },
+    "ok": true,
+    "result_excerpt": "commit 0b0673f7378bb3bad237329bf46e6b4c3ab22b62\nAuthor: nikhilbajantri <173451445+nikhilbajantri@users.noreply.github.com>\nDate:   Mon Nov 23 13:51:21 2026 +0530\n\n    refactor: accept lowercase discount codes\n\ndiff --git a/services/shoplite/src/shop.js b/services/shoplite/src/shop.js\nindex debfd7b.\u2026",
+    "usage": {
+     "in": 2705,
+     "out": 822,
+     "calls": 2
+    }
+   }
+  },
+  {
+   "id": 37,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:50.740172+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 38,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:51.592807+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Took 6.5s and 3 model calls",
+   "data": {
+    "usage": {
+     "in": 4666,
+     "out": 1359,
+     "calls": 3,
+     "seconds": 6.5
+    }
+   }
+  },
+  {
+   "id": 39,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:51.600017+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Web search is unavailable, so my confidence is capped at 60%",
+   "data": {}
+  },
+  {
+   "id": 40,
+   "type": "finding.added",
+   "occurred_at": "2026-11-23T09:02:51.604664+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "runtime_investigator",
+   "summary": "Checkout fails due to a JavaScript TypeError attempting to read property 'code' of an und\u2026",
+   "data": {
+    "agent": "runtime_investigator",
+    "claim": "Checkout fails due to a JavaScript TypeError attempting to read property 'code' of an undefined object in shop.js line 24. Configuration did not change.",
+    "confidence": 0.6,
+    "suspect_type": "code",
+    "suspect_ref": "services/shoplite/src/shop.js:24:40",
+    "evidence": [
+     {
+      "kind": "log",
+      "ref": "container_logs",
+      "excerpt": "TypeError: Cannot read properties of undefined (reading 'code')\n    at file:///data/lab/0b0673f7378b/services/shoplite/src/shop.js:24:40",
+      "url": null
+     },
+     {
+      "kind": "config",
+      "ref": "config_diff",
+      "excerpt": "{\"config_changed\": false, \"files_compared\": [\"services/shoplite/package-lock.json\", \"services/shoplite/package.json\"], \"changes\": []}",
+      "url": null
+     }
+    ]
+   }
+  },
+  {
+   "id": 41,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:52.749708+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 6,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 42,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:53.951677+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "code_investigator",
+   "summary": "Took 8.9s and 3 model calls",
+   "data": {
+    "usage": {
+     "in": 5333,
+     "out": 2424,
+     "calls": 3,
+     "seconds": 8.9
+    }
+   }
+  },
+  {
+   "id": 43,
+   "type": "finding.added",
+   "occurred_at": "2026-11-23T09:02:53.960955+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "code_investigator",
+   "summary": "Checkouts fail with a 500 server error when customers do not provide a discount code beca\u2026",
+   "data": {
+    "agent": "code_investigator",
+    "claim": "Checkouts fail with a 500 server error when customers do not provide a discount code because the code tries to read properties from a missing discount object.",
+    "confidence": 1.0,
+    "suspect_type": "code",
+    "suspect_ref": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62",
+    "evidence": [
+     {
+      "kind": "diff",
+      "ref": "services/shoplite/src/shop.js:24",
+      "excerpt": "-    const code = request.body?.discount?.code;\n+    const code = request.body.discount.code.trim().toUpperCase();",
+      "url": null
+     }
+    ]
+   }
+  },
+  {
+   "id": 44,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:54.754102+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 45,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:56.762342+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 46,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:57.153010+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "coordinator",
+   "summary": "Took 3.2s and 1 model call",
+   "data": {
+    "usage": {
+     "in": 894,
+     "out": 909,
+     "calls": 1,
+     "seconds": 3.2
+    }
+   }
+  },
+  {
+   "id": 47,
+   "type": "decision.made",
+   "occurred_at": "2026-11-23T09:02:57.160221+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "coordinator",
+   "summary": "Choosing a code fix: Both findings point at the same cause",
+   "data": {
+    "cause_type": "code",
+    "suspect_ref": "0b0673f7378bb3bad237329bf46e6b4c3ab22b62",
+    "remedy": "code_fix",
+    "reasoning": "Code investigator identified that a recent code change removed optional chaining on discount code requests. Runtime investigator confirmed this introduced a TypeError when customers omit discount codes, while verifying configurations remained unchanged.",
+    "uses_findings": [
+     "code_investigator",
+     "runtime_investigator"
+    ]
+   }
+  },
+  {
+   "id": 48,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:02:57.203014+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "repair",
+   "summary": "Writing a minimal fix, attempt 1 of 3\u2026",
+   "data": {}
+  },
+  {
+   "id": 49,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:02:58.771175+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 50,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:00.779584+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 51,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:03:02.473442+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "repair",
+   "summary": "Runs write file",
+   "data": {
+    "tool": "write_file",
+    "args": {
+     "path": "src/shop.js",
+     "content": "import express from \"express\";\n\nexport function createShop(revision) {\n  const app = express();\n  const product = { sku: \"demo-mug\", unitPriceCents: 1200 };\n\n  app.use(express.json({ limit: \"8kb\" }));\n  app.use((_request, response, next) => {\n    response.set(\"X-Shop-Revision\", revision);\n    next(\u2026"
+    },
+    "ok": true,
+    "result_excerpt": "{\"written\": \"src/shop.js\", \"unit_tests\": {\"ok\": false, \"passed\": 5, \"failed\": 3, \"output_excerpt\": \"TAP version 13\\n# Subtest: a cart without a discount checks out at the listed price\\nok 1 - a cart without a discount checks out at the listed price\\n  ---\\n  duration_ms: 36.243964\\n  type: 'test'\\n\u2026",
+    "usage": {
+     "in": 1489,
+     "out": 1175,
+     "calls": 1
+    }
+   }
+  },
+  {
+   "id": 52,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:02.788527+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 53,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:03:04.512552+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "repair",
+   "summary": "Runs read file",
+   "data": {
+    "tool": "read_file",
+    "args": {
+     "start_line": 1,
+     "path": "services/shoplite/test/checkout.test.js"
+    },
+    "ok": true,
+    "result_excerpt": "import assert from \"node:assert/strict\";\nimport { test } from \"node:test\";\nimport request from \"supertest\";\n\nimport { createShop } from \"../src/shop.js\";\n\ntest(\"a cart without a discount checks out at the listed price\", async () => {\n  const response = await request(createShop(\"baseline\"))\n    .pos\u2026",
+    "usage": {
+     "in": 5214,
+     "out": 1344,
+     "calls": 2
+    }
+   }
+  },
+  {
+   "id": 54,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:04.797490+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 55,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:06.806357+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 56,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:03:07.403293+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "repair",
+   "summary": "Runs write file",
+   "data": {
+    "tool": "write_file",
+    "args": {
+     "content": "import express from \"express\";\n\nexport function createShop(revision) {\n  const app = express();\n  const product = { sku: \"demo-mug\", unitPriceCents: 1200 };\n\n  app.use(express.json({ limit: \"8kb\" }));\n  app.use((_request, response, next) => {\n    response.set(\"X-Shop-Revision\", revision);\n    next(\u2026",
+     "path": "src/shop.js"
+    },
+    "ok": true,
+    "result_excerpt": "{\"written\": \"src/shop.js\", \"unit_tests\": \"all pass\", \"next\": \"Call commit_candidate now.\"}",
+    "usage": {
+     "in": 9595,
+     "out": 2064,
+     "calls": 3
+    }
+   }
+  },
+  {
+   "id": 57,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:03:08.594172+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "repair",
+   "summary": "Runs commit candidate",
+   "data": {
+    "tool": "commit_candidate",
+    "args": {
+     "message": "Fix checkout by restoring optional chaining on discount code requests"
+    },
+    "ok": true,
+    "result_excerpt": "{\"rev\": \"6f9350736d24245a86a7d65ee36631f39fd9e166\"}",
+    "usage": {
+     "in": 14739,
+     "out": 2102,
+     "calls": 4
+    }
+   }
+  },
+  {
+   "id": 58,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:08.814793+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 59,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:03:09.870183+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "repair",
+   "summary": "Took 12.7s and 5 model calls",
+   "data": {
+    "usage": {
+     "in": 19977,
+     "out": 2144,
+     "calls": 5,
+     "seconds": 12.7
+    }
+   }
+  },
+  {
+   "id": 60,
+   "type": "candidate.proposed",
+   "occurred_at": "2026-11-23T09:03:09.886629+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "repair",
+   "summary": "Proposes fix 1 for verification",
+   "data": {
+    "candidate_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1",
+    "rev": "6f9350736d24245a86a7d65ee36631f39fd9e166",
+    "diff": "diff --git a/services/shoplite/src/shop.js b/services/shoplite/src/shop.js\nindex a05671f..debfd7b 100644\n--- a/services/shoplite/src/shop.js\n+++ b/services/shoplite/src/shop.js\n@@ -21,7 +21,7 @@ export function createShop(revision) {\n       return;\n     }\n \n-    const code = request.body.discount.code.trim().toUpperCase();\n+    const code = request.body?.discount?.code;\n     if (code !== undefined && code !== \"SAVE10\") {\n       response.status(400).json({ status: \"rejected\", message: \"Unknown discount code\" });\n       return;\n",
+    "by": "agent"
+   }
+  },
+  {
+   "id": 61,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:03:09.921300+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Testing the candidate with a check I write myself\u2026",
+   "data": {}
+  },
+  {
+   "id": 62,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:10.824423+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 63,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:12.834402+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 64,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:14.841489+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 65,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:16.849254+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 3,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 66,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:18.858208+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 67,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:20.868136+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 68,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:22.876937+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 69,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:24.885579+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 70,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:26.894936+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 71,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:28.902818+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 72,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:30.911387+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 73,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:32.919191+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 74,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:34.927846+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 75,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:36.935521+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 76,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:38.943822+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 77,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:40.952986+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 78,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:42.960843+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 79,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:44.966323+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 80,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:46.975454+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 81,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:03:47.537404+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Runs read candidate diff",
+   "data": {
+    "tool": "read_candidate_diff",
+    "args": {},
+    "ok": true,
+    "result_excerpt": "diff --git a/services/shoplite/src/shop.js b/services/shoplite/src/shop.js\nindex a05671f..debfd7b 100644\n--- a/services/shoplite/src/shop.js\n+++ b/services/shoplite/src/shop.js\n@@ -21,7 +21,7 @@ export function createShop(revision) {\n       return;\n     }\n \n-    const code = request.body.discount.c\u2026",
+    "usage": {
+     "in": 1397,
+     "out": 586,
+     "calls": 1
+    }
+   }
+  },
+  {
+   "id": 82,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:03:48.230907+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Runs write regression test",
+   "data": {
+    "tool": "write_regression_test",
+    "args": {
+     "code": "import { createShop } from \"../src/shop.js\";\nimport request from \"supertest\";\nimport assert from \"node:assert/strict\";\nimport { test } from \"node:test\";\n\ntest(\"checkout demo-mug without discount code\", async () => {\n  const app = createShop(\"check\");\n  const res = await request(app)\n    .post(\"/che\u2026"
+    },
+    "ok": true,
+    "result_excerpt": "{\"broken\": {\"ok\": false, \"output\": \"TAP version 13\\n# Subtest: checkout demo-mug without discount code\\nnot ok 1 - checkout demo-mug without discount code\\n  ---\\n  duration_ms: 36.250017\\n  type: 'test'\\n  location: '/data/lab/0b0673f7378b/services/shoplite/test/phoenix-regression.test.js:6:1'\\n  \u2026",
+    "usage": {
+     "in": 1397,
+     "out": 586,
+     "calls": 1
+    }
+   }
+  },
+  {
+   "id": 83,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:48.983354+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 84,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:50.991820+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 85,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:03:51.098765+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Runs run unit tests",
+   "data": {
+    "tool": "run_unit_tests",
+    "args": {
+     "rev": "candidate"
+    },
+    "ok": true,
+    "result_excerpt": "{\"ok\": true, \"passed\": 8, \"failed\": 0, \"output_excerpt\": \"TAP version 13\\n# Subtest: a cart without a discount checks out at the listed price\\nok 1 - a cart without a discount checks out at the listed price\\n  ---\\n  duration_ms: 24.559358\\n  type: 'test'\\n  ...\\n# Subtest: a cart without a discoun\u2026",
+    "usage": {
+     "in": 3867,
+     "out": 1267,
+     "calls": 2
+    }
+   }
+  },
+  {
+   "id": 86,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:03:51.313924+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Runs run unit tests",
+   "data": {
+    "tool": "run_unit_tests",
+    "args": {
+     "rev": "healthy"
+    },
+    "ok": true,
+    "result_excerpt": "{\"ok\": true, \"passed\": 8, \"failed\": 0, \"output_excerpt\": \"TAP version 13\\n# Subtest: a cart without a discount checks out at the listed price\\nok 1 - a cart without a discount checks out at the listed price\\n  ---\\n  duration_ms: 28.284873\\n  type: 'test'\\n  ...\\n# Subtest: a cart without a discoun\u2026",
+    "usage": {
+     "in": 3867,
+     "out": 1267,
+     "calls": 2
+    }
+   }
+  },
+  {
+   "id": 87,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:03:52.978104+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Took 42.5s and 3 model calls",
+   "data": {
+    "usage": {
+     "in": 8169,
+     "out": 1343,
+     "calls": 3,
+     "seconds": 42.5
+    }
+   }
+  },
+  {
+   "id": 88,
+   "type": "verification.done",
+   "occurred_at": "2026-11-23T09:03:52.985369+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Verified: The check fails on broken and passes on healthy and the candidate",
+   "data": {
+    "candidate_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1",
+    "broken": "fail",
+    "healthy": "pass",
+    "candidate": "pass",
+    "unit_tests": "pass",
+    "diff_review_ok": true,
+    "issues": [],
+    "verdict": "VERIFIED",
+    "reason": "The check fails on broken and passes on healthy and the candidate",
+    "rev": "6f9350736d24245a86a7d65ee36631f39fd9e166"
+   }
+  },
+  {
+   "id": 89,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:53.003604+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 90,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:55.010350+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 91,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:57.019282+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 92,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:03:59.028798+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 93,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:01.037887+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 94,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:03.045190+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 95,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:05.053985+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 96,
+   "type": "candidate.proposed",
+   "occurred_at": "2026-11-23T09:04:05.339765+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "chaos",
+   "summary": "The judge submits a flawed fix for verification",
+   "data": {
+    "candidate_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6-judge1",
+    "rev": "0805e8e232872b8e8f6f314489b1a4676fb8133e",
+    "diff": "diff --git a/services/shoplite/src/shop.js b/services/shoplite/src/shop.js\nindex a05671f..943fc91 100644\n--- a/services/shoplite/src/shop.js\n+++ b/services/shoplite/src/shop.js\n@@ -35,7 +35,7 @@ export function createShop(revision) {\n       quantity,\n       subtotalCents,\n       discountCents,\n-      totalCents: subtotalCents - discountCents,\n+      totalCents: (() => { try { return subtotalCents - discountCents; } catch { return 0; } })(),\n       revision,\n     });\n   });\n",
+    "by": "judge"
+   }
+  },
+  {
+   "id": 97,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:04:05.372267+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Testing the candidate with a check I write myself\u2026",
+   "data": {}
+  },
+  {
+   "id": 98,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:07.063603+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 99,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:09.071790+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 100,
+   "type": "agent.tool",
+   "occurred_at": "2026-11-23T09:04:09.299929+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Runs write regression test",
+   "data": {
+    "tool": "write_regression_test",
+    "args": {
+     "code": "import { createShop } from \"../src/shop.js\";\nimport request from \"supertest\";\nimport assert from \"node:assert/strict\";\nimport { test } from \"node:test\";\n\ntest(\"checkout demo-mug quantity 1\", async () => {\n  const app = createShop(\"check\");\n  const res = await request(app)\n    .post(\"/checkout\")\n   \u2026"
+    },
+    "ok": true,
+    "result_excerpt": "{\"broken\": {\"ok\": false, \"output\": \"TAP version 13\\n# Subtest: checkout demo-mug quantity 1\\nnot ok 1 - checkout demo-mug quantity 1\\n  ---\\n  duration_ms: 34.133875\\n  type: 'test'\\n  location: '/data/lab/0b0673f7378b/services/shoplite/test/phoenix-regression.test.js:6:1'\\n  failureType: 'testCode\u2026",
+    "usage": {
+     "in": 1574,
+     "out": 612,
+     "calls": 1
+    }
+   }
+  },
+  {
+   "id": 101,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:11.080408+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 102,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:04:12.628486+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Took 6.7s and 2 model calls",
+   "data": {
+    "usage": {
+     "in": 4309,
+     "out": 1546,
+     "calls": 2,
+     "seconds": 6.7
+    }
+   }
+  },
+  {
+   "id": 103,
+   "type": "verification.done",
+   "occurred_at": "2026-11-23T09:04:12.948376+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "verifier",
+   "summary": "Rejected: The candidate still fails the check; The candidate fails the shop's own tests; \u2026",
+   "data": {
+    "candidate_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6-judge1",
+    "broken": "fail",
+    "healthy": "pass",
+    "candidate": "fail",
+    "unit_tests": "fail",
+    "diff_review_ok": false,
+    "issues": [
+     "A catch block swallows the error",
+     "Candidate accesses request.body.discount.code without optional chaining, causing a TypeError and 500 Internal Server Error when request.body.discount is undefined (such as standard checkout without discount).",
+     "Candidate adds an unnecessary try/catch block around totalCents calculation instead of addressing the root cause of discount property access failure.",
+     "Check output on the candidate: not ok 1 - checkout demo-mug quantity 1 | error: |- | expected: 200 | actual: 500",
+     "The candidate answers 500 None, healthy answers 200 {'subtotalCents': 1200, 'discountCents': 0, 'totalCents': 1200}",
+     "Unit test output: not ok 1 - a cart without a discount checks out at the listed price | error: 'expected 200 \"OK\", got 500 \"Internal Server Error\"' | not ok 2 - a cart without a discount reports its subtotal"
+    ],
+    "verdict": "REJECTED",
+    "reason": "The candidate still fails the check; The candidate fails the shop's own tests; A catch block swallows the error",
+    "rev": "0805e8e232872b8e8f6f314489b1a4676fb8133e"
+   }
+  },
+  {
+   "id": 104,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:13.088152+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 4,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 105,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:15.095312+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 106,
+   "type": "approval.granted",
+   "occurred_at": "2026-11-23T09:04:16.894123+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "release",
+   "summary": "Approved candidate inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1",
+   "data": {
+    "candidate_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1",
+    "rev": "6f9350736d24245a86a7d65ee36631f39fd9e166"
+   }
+  },
+  {
+   "id": 107,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:17.098637+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 3,
+    "slot": "b",
+    "revision": "8edb2017ec2195835c5d19e68aec9fcc9ab7284a",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 108,
+   "type": "release.done",
+   "occurred_at": "2026-11-23T09:04:17.597327+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "release",
+   "summary": "Verified checkout fix released",
+   "data": {
+    "candidate_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1",
+    "ok": true,
+    "active_slot": "a",
+    "active_rev": "6f9350736d24245a86a7d65ee36631f39fd9e166",
+    "seconds_to_verified_fix": 100.763,
+    "reason": null
+   }
+  },
+  {
+   "id": 109,
+   "type": "incident.closed",
+   "occurred_at": "2026-11-23T09:04:17.597396+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "coordinator",
+   "summary": "Incident closed: checkout healthy on slot A @ 6f93507",
+   "data": {
+    "status": "resolved",
+    "active_slot": "a",
+    "active_rev": "6f9350736d24245a86a7d65ee36631f39fd9e166"
+   }
+  },
+  {
+   "id": 110,
+   "type": "agent.note",
+   "occurred_at": "2026-11-23T09:04:17.604820+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "report",
+   "summary": "PR skipped: no GitHub token",
+   "data": {}
+  },
+  {
+   "id": 111,
+   "type": "report.ready",
+   "occurred_at": "2026-11-23T09:04:17.608862+00:00",
+   "incident_id": "inc_0ef2eb50d16146af93e9ad8cfc2307a6",
+   "actor": "report",
+   "summary": "The incident report is ready",
+   "data": {
+    "markdown": "# Incident report: inc_0ef2eb50d16146af93e9ad8cfc2307a6\n\nEvery figure below is computed from recorded events.\n\n| Measure | Value |\n| --- | --- |\n| Time to restore | 0.3 s |\n| Time to verified fix | 76.2 s |\n| Failed checkouts | 3 |\n| Value of failed carts | 3600 cents across 3 of 3 carts with a recorded total |\n\n## Findings\n\n### A: Code Investigator\n\nCheckouts fail with a 500 server error when customers do not provide a discount code because the code tries to read properties from a missing discount object.\n\n- Confidence: 100%\n- Suspect: code 0b0673f7378bb3bad237329bf46e6b4c3ab22b62\n\ndiff: services/shoplite/src/shop.js:24\n\n```diff\n-    const code = request.body?.discount?.code;\n+    const code = request.body.discount.code.trim().toUpperCase();\n```\n\n### B: Runtime Investigator\n\nCheckout fails due to a JavaScript TypeError attempting to read property 'code' of an undefined object in shop.js line 24. Configuration did not change.\n\n- Confidence: 60%\n- Suspect: code services/shoplite/src/shop.js:24:40\n\nlog: container_logs\n\n```\nTypeError: Cannot read properties of undefined (reading 'code')\n    at file:///data/lab/0b0673f7378b/services/shoplite/src/shop.js:24:40\n```\n\nconfig: config_diff\n\n```\n{\"config_changed\": false, \"files_compared\": [\"services/shoplite/package-lock.json\", \"services/shoplite/package.json\"], \"changes\": []}\n```\n\n## Decision\n\n**code_fix**: Code investigator identified that a recent code change removed optional chaining on discount code requests. Runtime investigator confirmed this introduced a TypeError when customers omit discount codes, while verifying configurations remained unchanged.\n\n## Candidates\n\n| Candidate | By | Broken | Healthy | Candidate | Unit tests | Diff review | Verdict | Why |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1 | agent | \u2717 | \u2713 | \u2713 | \u2713 | \u2713 | VERIFIED | The check fails on broken and passes on healthy and the candidate |\n| inc_0ef2eb50d16146af93e9ad8cfc2307a6-judge1 | judge | \u2717 | \u2713 | \u2717 | \u2717 | \u2717 | REJECTED | The candidate still fails the check; The candidate fails the shop's own tests; A catch block swallows the error |\n\n### inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1 at 6f9350736d24\n\n```diff\ndiff --git a/services/shoplite/src/shop.js b/services/shoplite/src/shop.js\nindex a05671f..debfd7b 100644\n--- a/services/shoplite/src/shop.js\n+++ b/services/shoplite/src/shop.js\n@@ -21,7 +21,7 @@ export function createShop(revision) {\n       return;\n     }\n \n-    const code = request.body.discount.code.trim().toUpperCase();\n+    const code = request.body?.discount?.code;\n     if (code !== undefined && code !== \"SAVE10\") {\n       response.status(400).json({ status: \"rejected\", message: \"Unknown discount code\" });\n       return;\n```\n\n### inc_0ef2eb50d16146af93e9ad8cfc2307a6-judge1 at 0805e8e23287\n\n```diff\ndiff --git a/services/shoplite/src/shop.js b/services/shoplite/src/shop.js\nindex a05671f..943fc91 100644\n--- a/services/shoplite/src/shop.js\n+++ b/services/shoplite/src/shop.js\n@@ -35,7 +35,7 @@ export function createShop(revision) {\n       quantity,\n       subtotalCents,\n       discountCents,\n-      totalCents: subtotalCents - discountCents,\n+      totalCents: (() => { try { return subtotalCents - discountCents; } catch { return 0; } })(),\n       revision,\n     });\n   });\n```\n\n## Release\n\nReleased: inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1 (slot A)\n\n## Timeline (UTC)\n\n| Time | Who | What |\n| --- | --- | --- |\n| 09:02:36 | coordinator | Checkout incident opened on slot A |\n| 09:02:37 | coordinator | Restored checkout on slot B |\n| 09:02:46 | code_investigator | Bisecting 1 commit against the failing checkout\u2026 |\n| 09:02:46 | runtime_investigator | Reading what slot A printed as it failed\u2026 |\n| 09:02:47 | code_investigator | Checkout first breaks at 0b0673f: refactor: accept lowercase discount codes |\n| 09:02:48 | runtime_investigator | Looking up this exact error on the web\u2026 |\n| 09:02:48 | runtime_investigator | Comparing configuration with the healthy version\u2026 |\n| 09:02:51 | runtime_investigator | Took 6.5s and 3 model calls |\n| 09:02:51 | runtime_investigator | Web search is unavailable, so my confidence is capped at 60% |\n| 09:02:51 | runtime_investigator | Checkout fails due to a JavaScript TypeError attempting to read property 'code' of an und\u2026 |\n| 09:02:53 | code_investigator | Took 8.9s and 3 model calls |\n| 09:02:53 | code_investigator | Checkouts fail with a 500 server error when customers do not provide a discount code beca\u2026 |\n| 09:02:57 | coordinator | Took 3.2s and 1 model call |\n| 09:02:57 | coordinator | Choosing a code fix: Both findings point at the same cause |\n| 09:02:57 | repair | Writing a minimal fix, attempt 1 of 3\u2026 |\n| 09:03:09 | repair | Took 12.7s and 5 model calls |\n| 09:03:09 | repair | Proposes fix 1 for verification |\n| 09:03:09 | verifier | Testing the candidate with a check I write myself\u2026 |\n| 09:03:52 | verifier | Took 42.5s and 3 model calls |\n| 09:03:52 | verifier | Verified: The check fails on broken and passes on healthy and the candidate |\n| 09:04:05 | chaos | The judge submits a flawed fix for verification |\n| 09:04:05 | verifier | Testing the candidate with a check I write myself\u2026 |\n| 09:04:12 | verifier | Took 6.7s and 2 model calls |\n| 09:04:12 | verifier | Rejected: The candidate still fails the check; The candidate fails the shop's own tests; \u2026 |\n| 09:04:16 | release | Approved candidate inc_0ef2eb50d16146af93e9ad8cfc2307a6-c1 |\n| 09:04:17 | release | Verified checkout fix released |\n| 09:04:17 | coordinator | Incident closed: checkout healthy on slot A @ 6f93507 |\n",
+    "pr_url": null
+   }
+  },
+  {
+   "id": 112,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:19.105379+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "a",
+    "revision": "6f9350736d24245a86a7d65ee36631f39fd9e166",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  },
+  {
+   "id": 113,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:21.113171+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "a",
+    "revision": "6f9350736d24245a86a7d65ee36631f39fd9e166",
+    "discount": false,
+    "cart_total_cents": 1200,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1
+    }
+   }
+  },
+  {
+   "id": 114,
+   "type": "checkout.probe",
+   "occurred_at": "2026-11-23T09:04:23.121966+00:00",
+   "incident_id": null,
+   "actor": "probe",
+   "summary": "Checkout passed",
+   "data": {
+    "ok": true,
+    "status_code": 200,
+    "latency_ms": 5,
+    "slot": "a",
+    "revision": "6f9350736d24245a86a7d65ee36631f39fd9e166",
+    "discount": true,
+    "cart_total_cents": 1080,
+    "request_body": {
+     "sku": "demo-mug",
+     "quantity": 1,
+     "discount": {
+      "code": "SAVE10"
+     }
+    }
+   }
+  }
+ ]
+}

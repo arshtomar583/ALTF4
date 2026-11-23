@@ -80,6 +80,8 @@ export type PhoenixEvent = {
     id: number;
     type: Type;
     occurred_at: string;
+    /** Set only by a replay: when this really happened. */
+    recorded_at?: string;
     incident_id: string | null;
     actor: string;
     summary: string | null;

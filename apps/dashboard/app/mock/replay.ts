@@ -11,7 +11,7 @@ export function replay(recording: Recording, emit: (event: PhoenixEvent) => void
   const timers = recording.events.map((event) => {
     const at = Date.parse(event.occurred_at) + shift;
     return window.setTimeout(
-      () => emit({ ...event, occurred_at: new Date(at).toISOString() }),
+      () => emit({ ...event, occurred_at: new Date(at).toISOString(), recorded_at: event.occurred_at }),
       Math.max(0, at - Date.now()),
     );
   });

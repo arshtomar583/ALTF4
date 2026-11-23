@@ -16,7 +16,7 @@ function group(events: PhoenixEvent[]): Group[] {
 }
 
 function time(event: PhoenixEvent) {
-  return new Date(event.occurred_at).toLocaleTimeString("en-GB");
+  return new Date(event.recorded_at ?? event.occurred_at).toLocaleTimeString("en-GB");
 }
 
 function Line({ event }: { event: PhoenixEvent }) {
