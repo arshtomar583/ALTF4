@@ -15,12 +15,18 @@ export function Dialog({ label, className, onClose, children }: {
   useEffect(() => {
     dialog.current?.showModal();
   }, []);
-  const close = () => dialog.current?.close();
+  const close = () => {
+    dialog.current?.close();
+    onClose();
+  };
   return (
     <dialog
       ref={dialog}
       aria-label={label}
-      onClose={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
+      }}
       onClick={(event) => event.target === dialog.current && close()}
       className={`appear border-line bg-panel text-text backdrop:bg-black/70 ${className}`}
     >
