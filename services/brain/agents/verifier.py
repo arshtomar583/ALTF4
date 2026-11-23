@@ -18,7 +18,8 @@ NAME = "verifier"
 SYSTEM = """You are the Verifier on an incident team. You did not write the candidate and you know nothing
 about how it was made. Prove whether it fixes the failing request.
 
-1. lab_replay the failing request on healthy. Its answer is the expected behaviour.
+1. The answers of all three versions to the failing request are below. Healthy's is the expected one.
+   Use lab_replay only for other carts.
 2. write_regression_test: one node:test file in ES module syntax that imports
    { createShop } from "../src/shop.js", request from "supertest", assert from "node:assert/strict" and
    { test } from "node:test". Send the failing request to createShop("check") and assert the exact status
@@ -26,7 +27,7 @@ about how it was made. Prove whether it fixes the failing request.
    dates or random ids.
 3. run_regression on broken, healthy and candidate. It must fail on broken and pass on healthy; if not,
    rewrite it.
-4. run_unit_tests on candidate, and read_candidate_diff.
+4. Review the candidate diff.
 5. Submit. diff_review_ok is false if the diff deletes or skips tests or assertions, swallows errors,
    hard-codes totals or prices, hides a wrong total, or changes anything unrelated. List each problem.
 
@@ -173,7 +174,7 @@ async def verify(lab: Lab, ctx: IncidentContext, candidate_id: str, rev: str) ->
         await _contents(lab, revs["candidate"], files),
         await lab.shop_path("src/"),
     )
-    bench = Bench(lab, revs, diff)
+    bench = Bench(lab, revs, diff, ctx.failing_request)
     await note(ctx.incident_id, NAME, "Testing the candidate with a check I write myself…")
     replays = {name: await lab.replay(sha, ctx.failing_request) for name, sha in revs.items()}
 
@@ -192,14 +193,18 @@ async def verify(lab: Lab, ctx: IncidentContext, candidate_id: str, rev: str) ->
             )
         return review
 
-    try:
-        review = await run_agent(
+    answers = "\n".join(
+        f"{name} = {sha} answers {replays[name]['status']} {replays[name]['body_excerpt']}"
+        for name, sha in revs.items()
+    )
+
+    async def ask() -> Review:
+        return await run_agent(
             name=NAME,
             system=SYSTEM,
             user=(
-                f"Failing request: {ctx.failing_request.model_dump_json()}\n"
-                f"broken = {revs['broken']}\nhealthy = {revs['healthy']}\n"
-                f"candidate = {revs['candidate']}\n\nCandidate diff (broken to candidate):\n{diff}"
+                f"Failing request: {ctx.failing_request.model_dump_json()}\n{answers}"
+                f"\n\nCandidate diff (broken to candidate):\n{diff}"
             ),
             tools=bench.tools(),
             model=strong_model(),
@@ -208,6 +213,16 @@ async def verify(lab: Lab, ctx: IncidentContext, candidate_id: str, rev: str) ->
             max_turns=10,
             check=check,
         )
+
+    try:
+        try:
+            review = await ask()
+        except AgentFailed:
+            # An outage here says nothing about the fix, unless code has already caught it.
+            if code_issues or not _same_answer(replays["candidate"], replays["healthy"]):
+                raise
+            await note(ctx.incident_id, NAME, "My check did not finish, so I start it again")
+            review = await ask()
     except AgentFailed as error:
         # Without the verifier's own test nothing can be verified; a plain replay still shows the facts.
         review = Review(

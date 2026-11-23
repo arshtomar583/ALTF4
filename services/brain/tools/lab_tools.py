@@ -1,5 +1,6 @@
 """The Verifier's tools. They see three revisions and nothing about how the fix was made."""
 
+import json
 import re
 
 from ..agents.models import FailingRequest
@@ -33,8 +34,8 @@ def check_test(code: str) -> None:
 class Bench:
     """One verification: its regression test and the results measured in the lab."""
 
-    def __init__(self, lab: Lab, revs: dict[str, str], diff: str):
-        self.lab, self.revs, self.diff = lab, revs, diff
+    def __init__(self, lab: Lab, revs: dict[str, str], diff: str, failing: FailingRequest):
+        self.lab, self.revs, self.diff, self.failing = lab, revs, diff, failing
         self.test: str | None = None
         self._results: dict[str, dict] = {}
         self._unit: dict[str, dict] = {}
@@ -45,11 +46,11 @@ class Bench:
                 return sha
         raise ValueError(f"rev must be one of {', '.join(self.revs)}")
 
-    async def lab_replay(self, rev: str, request: dict) -> dict:
-        fields = {"method": "POST", "path": "/checkout"} | request
-        if not str(fields["path"]).startswith("/"):
-            raise ValueError("path must start with /")
-        return await self.lab.replay(self._rev(rev), FailingRequest.model_validate(fields))
+    async def lab_replay(self, rev: str, body_json: str | None = None) -> dict:
+        request = self.failing
+        if body_json:
+            request = request.model_copy(update={"body": json.loads(body_json)})
+        return await self.lab.replay(self._rev(rev), request)
 
     async def write_regression_test(self, code: str) -> dict:
         check_test(code)
@@ -80,19 +81,16 @@ class Bench:
         def schema(**properties: dict) -> dict:
             return {"type": "object", "properties": properties, "required": list(properties)}
 
-        request = {
-            "type": "object",
-            "properties": {
-                "method": {"type": "string"},
-                "path": {"type": "string"},
-                "body": {"type": "object"},
-            },
-        }
         return [
             Tool(
                 "lab_replay",
-                "Send a request to one revision, running alone in the lab.",
-                schema(rev=rev, request=request),
+                "Send the failing request to one revision in the lab. body_json replaces its body.",
+                # A string, because models fill an object without listed properties with {}.
+                {
+                    "type": "object",
+                    "properties": {"rev": rev, "body_json": {"type": "string"}},
+                    "required": ["rev"],
+                },
                 self.lab_replay,
             ),
             Tool(

@@ -123,7 +123,7 @@ async def test_tool_lists(lab, revs):
     assert {t.name for t in workspace.tools()} == {
         "read_file", "write_file", "run_unit_tests", "commit_candidate",
     }
-    assert {t.name for t in Bench(lab, revs, "").tools()} == {
+    assert {t.name for t in Bench(lab, revs, "", FailingRequest()).tools()} == {
         "lab_replay", "write_regression_test", "run_regression", "run_unit_tests", "read_candidate_diff",
     }
 
@@ -280,10 +280,30 @@ async def test_useless_test_is_reasked_then_rejected(lab, ctx, revs, model):
 
 async def test_verifier_outage_never_verifies(lab, ctx, revs, model):
     rev = await candidate(lab, revs, "outage", lambda text: text.replace(BAD, FIX))
-    model.turns["verifier"] = [[], [("submit", {})], [("submit", {})]]
+    model.turns["verifier"] = [[], [("submit", {})], [("submit", {})]] * 2
     result = await verifier.verify(lab, ctx, "c", rev)
     assert (result.broken, result.healthy, result.candidate) == ("fail", "pass", "pass")
     assert result.verdict == "REJECTED" and "could not finish" in result.reason
+
+
+async def test_verifier_outage_is_retried_before_the_fix_is_blamed(lab, ctx, revs, model):
+    rev = await candidate(lab, revs, "flaky", lambda text: text.replace(BAD, FIX))
+    model.turns["verifier"] = [[("submit", {})], [("submit", {})], *verifier_turns()]
+    assert (await verifier.verify(lab, ctx, "c", rev)).verdict == "VERIFIED"
+
+
+async def test_replay_uses_the_failing_request_unless_told_otherwise(lab, ctx, revs):
+    bench = Bench(lab, revs, "", ctx.failing_request)
+    assert (await bench.lab_replay("healthy"))["status"] == 200
+    assert (await bench.lab_replay("healthy", '{"sku": "nope"}'))["status"] == 400
+
+
+async def test_repair_accepts_repository_paths(lab, revs):
+    root, _ = await lab.candidate_branch(revs["broken"], "paths", 1)
+    workspace = Workspace(lab, root, revs["broken"])
+    assert BAD in await workspace.read_file(f"{SHOP}/src/shop.js")
+    with pytest.raises(PermissionError):
+        await workspace.write_file(f"{SHOP}/test/checkout.test.js", "x")
 
 
 @pytest.fixture

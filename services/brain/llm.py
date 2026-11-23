@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import re
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from functools import lru_cache
@@ -25,6 +26,9 @@ MAX_TOOL_OUTPUT = 4_000
 MAX_EXCERPT = 300
 MAX_TOKENS = 16_000
 MAX_RETRY_DELAY = 45
+FAILOVER_TIMEOUT = 20
+BUSY_SECONDS = 120
+DEFAULT_FALLBACKS = "gemini-3.6-flash,gemini-3.5-flash-lite"
 
 
 class AgentFailed(Exception):
@@ -124,12 +128,21 @@ class ClaudeChat:
         self.messages.append({"role": "user", "content": content})
 
 
+_busy_until: dict[str, float] = {}
+
+
+class _Unavailable(Exception):
+    """This model cannot answer now; another one might."""
+
+
 class GeminiChat:
     """Model turns are replayed untouched, because they carry thought signatures."""
 
     def __init__(self, name: str, model: str, system: str, user: str, tools: list[dict]):
         self.name = name
         self.model = model
+        names = os.getenv("MODEL_FALLBACKS", DEFAULT_FALLBACKS).split(",")
+        self.fallbacks = [name.strip() for name in names if name.strip() not in ("", model)]
         declarations = [
             gemini.FunctionDeclaration(
                 name=tool["name"],
@@ -151,7 +164,11 @@ class GeminiChat:
         self.contents = [gemini.Content(role="user", parts=[gemini.Part(text=user)])]
 
     async def ask(self, usage: dict) -> list[Call]:
+        planned = self.model
         response = await self._generate()
+        if self.model != planned:
+            # Visible in the events, so nobody mistakes which model answered.
+            usage["model"] = self.model
         if counts := response.usage_metadata:
             usage["in"] += counts.prompt_token_count or 0
             usage["out"] += (counts.candidates_token_count or 0) + (counts.thoughts_token_count or 0)
@@ -170,6 +187,21 @@ class GeminiChat:
         return [Call(call.id, call.name, call.args or {}) for call in calls]
 
     async def _generate(self) -> gemini.GenerateContentResponse:
+        """Retry each model once. A busy or used-up model hands over to the next fallback."""
+        while True:
+            if self.fallbacks and time.monotonic() < _busy_until.get(self.model, 0):
+                self.model = self.fallbacks.pop(0)
+                continue
+            try:
+                return await self._generate_once_or_twice()
+            except _Unavailable as error:
+                # Other agents skip this model for a while instead of finding out themselves.
+                _busy_until[self.model] = time.monotonic() + BUSY_SECONDS
+                if not self.fallbacks:
+                    raise AgentFailed(f"{self.name} {error}") from error
+                self.model = self.fallbacks.pop(0)
+
+    async def _generate_once_or_twice(self) -> gemini.GenerateContentResponse:
         models = gemini_client().aio.models
         for attempt in (1, 2):
             try:
@@ -177,22 +209,24 @@ class GeminiChat:
                     models.generate_content(
                         model=self.model, contents=self.contents, config=self.config
                     ),
-                    LLM_TIMEOUT,
+                    FAILOVER_TIMEOUT if self.fallbacks else LLM_TIMEOUT,
                 )
             except gemini_errors.APIError as error:
-                detail = f"{error.code} {error.message}"
+                detail = f"{self.model} {error.code} {clip(error.message or '', 200)}"
+                if error.code != 429 and error.code < 500:
+                    raise AgentFailed(f"{self.name} {detail}") from error
                 details = json.dumps(error.details, default=str)
-                daily = "PerDay" in details
-                if attempt == 2 or daily or (error.code != 429 and error.code < 500):
-                    limit = "daily free quota is used up: " if daily else ""
-                    raise AgentFailed(f"{self.name} {limit}{clip(detail, 200)}") from error
+                if "PerDay" in details:
+                    raise _Unavailable(f"daily free quota is used up: {detail}") from error
                 asked = re.search(r'"retryDelay": "([\d.]+)s"', details)
                 delay = float(asked[1]) if asked else 2
+                # Waiting out a long rate limit costs more than moving to another model.
+                if attempt == 2 or (self.fallbacks and delay > 5):
+                    raise _Unavailable(detail) from error
                 await asyncio.sleep(min(delay, MAX_RETRY_DELAY))
             except Exception as error:
-                if attempt == 2:
-                    reason = f"{self.name} could not reach the model: {type(error).__name__}"
-                    raise AgentFailed(reason) from error
+                if attempt == 2 or self.fallbacks:
+                    raise _Unavailable(f"could not reach the model: {type(error).__name__}") from error
         raise AssertionError("unreachable")
 
     def reply(self, results: list[Result], nudge: str | None) -> None:
@@ -260,9 +294,9 @@ async def run_agent(
         raise AgentFailed(f"{name} has no Anthropic API key") from error
     finally:
         if usage["out"]:
-            await note(
-                incident_id, name, f"Used {usage['in']} tokens in, {usage['out']} out", {"usage": usage}
-            )
+            switched = f" on {usage['model']}" if "model" in usage else ""
+            summary = f"Used {usage['in']} tokens in, {usage['out']} out{switched}"
+            await note(incident_id, name, summary, {"usage": usage})
     return result
 
 

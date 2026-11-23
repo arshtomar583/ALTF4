@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import pytest
 
 from brain import llm
+from brain.agents import bridge
 from brain.agents.models import Decision, Finding
 
 pytestmark = pytest.mark.asyncio
@@ -54,7 +55,9 @@ def server(tmp_path, monkeypatch):
     monkeypatch.setenv("PHOENIX_DB_PATH", str(tmp_path / "phoenix.sqlite3"))
     monkeypatch.setenv("GEMINI_API_KEY", "test")
     monkeypatch.setenv("GOOGLE_GEMINI_BASE_URL", f"http://127.0.0.1:{http.server_port}")
+    monkeypatch.setenv("MODEL_FALLBACKS", "")
     llm.gemini_client.cache_clear()
+    monkeypatch.setattr(llm, "_busy_until", {})
     yield turns, sent
     http.shutdown()
     http.server_close()
@@ -118,6 +121,33 @@ async def test_rate_limit_waits_as_asked_and_retries_once(server, monkeypatch):
     turns += [fail(503), fail(503)]
     with pytest.raises(llm.AgentFailed, match="503"):
         await run()
+
+
+async def test_busy_model_hands_over_and_says_so(server, monkeypatch):
+    turns, sent = server
+
+    async def sleep(_):
+        pass
+
+    monkeypatch.setattr(llm.asyncio, "sleep", sleep)
+    monkeypatch.setenv("MODEL_FALLBACKS", "gemini-test,gemini-second,gemini-third")
+    quota = fail(429, {"violations": [{"quotaId": "GenerateRequestsPerDayPerProject"}]})
+    turns += [say(("nope", {})), fail(503), fail(503), quota, say(("submit", DECISION))]
+    await run()
+    models = [path.split("/models/")[1].split(":")[0] for path, _ in sent]
+    assert models == ["gemini-test"] * 3 + ["gemini-second", "gemini-third"]
+    assert sent[-1][1]["contents"] == sent[1][1]["contents"]
+    last = bridge.events()[-1]
+    assert last["data"]["usage"]["model"] == "gemini-third" and "gemini-third" in last["summary"]
+
+
+async def test_busy_model_is_skipped_by_the_next_agent(server, monkeypatch):
+    turns, sent = server
+    monkeypatch.setenv("MODEL_FALLBACKS", "gemini-second")
+    turns += [fail(429, {"retryDelay": "40s"}), say(("submit", DECISION)), say(("submit", DECISION))]
+    await run()
+    await run()
+    assert ["test" in path for path, _ in sent] == [True, False, False]
 
 
 async def test_daily_quota_and_bad_requests_fail_at_once(server):

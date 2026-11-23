@@ -2,7 +2,7 @@
 
 from pathlib import Path, PurePosixPath
 
-from ..lab import Lab
+from ..lab import SHOP_DIR, Lab
 from ..llm import Tool
 
 MAX_READ = 3_500
@@ -17,6 +17,8 @@ class Workspace:
         self.rev: str | None = None
 
     def _inside(self, path: str) -> Path:
+        # Diffs name files from the repository root, so accept those paths too.
+        path = path.removeprefix(f"{SHOP_DIR}/")
         parts = PurePosixPath(path.replace("\\", "/")).parts
         target = (self.path / path).resolve()
         if not parts or ".." in parts or not target.is_relative_to(self.path):
