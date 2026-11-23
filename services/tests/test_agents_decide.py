@@ -18,7 +18,7 @@ def code(confidence=0.9, **changes):
     fields = {
         "agent": "code_investigator", "claim": "A commit reads a missing discount",
         "confidence": confidence, "suspect_type": "code", "suspect_ref": SHA,
-        "evidence": [Evidence(kind="diff", ref="src/shop.js:30", excerpt="+ discount.amount")],
+        "evidence": [Evidence(kind="diff", ref="src/shop.js:30", excerpt="+ discount.code")],
     }
     return Finding(**fields | changes)
 

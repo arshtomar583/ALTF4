@@ -4,12 +4,15 @@ import json
 from pathlib import PurePosixPath
 from typing import Any
 
+from ..agents.base import clip
 from ..agents.models import FailingRequest
 from ..lab import Lab
 from ..llm import Tool
 
 REV = {"type": "string", "description": "A commit SHA or tag"}
 # A shop that never starts looks like a gateway error through the version switch.
+MAX_LOOKBACK = 12
+MAX_DIFF = 2_000
 GATEWAY_ERRORS = (502, 503, 504)
 
 
@@ -24,11 +27,11 @@ def _reproduces(result: dict, request: FailingRequest) -> bool:
 
 
 async def git_diff(lab: Lab, a: str, b: str) -> str:
-    return await lab.shop_git("diff", await lab.resolve(a), await lab.resolve(b))
+    return clip(await lab.shop_git("diff", await lab.resolve(a), await lab.resolve(b)), MAX_DIFF)
 
 
 async def git_show(lab: Lab, rev: str) -> str:
-    return await lab.show(rev, "--stat", "--patch")
+    return clip(await lab.show(rev, "--patch"), MAX_DIFF)
 
 
 async def commits_between(lab: Lab, good: str, bad: str) -> list[str]:
@@ -40,8 +43,6 @@ async def git_bisect(lab: Lab, good: str, bad: str, request: FailingRequest) -> 
     """Find the first commit in good..bad that reproduces the failing request."""
     good, bad = await lab.resolve(good), await lab.resolve(bad)
     commits = await commits_between(lab, good, bad)
-    if not commits:
-        raise ValueError("There are no commits between good and bad")
     checks: list[dict] = []
 
     async def is_bad(rev: str) -> bool:
@@ -54,6 +55,15 @@ async def git_bisect(lab: Lab, good: str, bad: str, request: FailingRequest) -> 
         raise ValueError("The good revision also fails, so bisect cannot run")
     if not await is_bad(bad):
         raise ValueError("The bad revision does not reproduce the failure")
+    if not commits:
+        # The healthy revision is a fix built on top of the bad one, so look further back.
+        older = (await lab.shop_git("rev-list", "--first-parent", f"-{MAX_LOOKBACK}", bad)).split()
+        for position, rev in enumerate(older):
+            if position and not await is_bad(rev):
+                commits = older[:position][::-1]
+                break
+        else:
+            raise ValueError("No earlier commit passes, so bisect cannot run")
 
     low, high = 0, len(commits) - 1
     while low < high:

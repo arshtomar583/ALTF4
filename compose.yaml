@@ -39,7 +39,7 @@ services:
       PHOENIX_SOURCE_GIT: /source.git
       PHOENIX_START_SLOT: "${PHOENIX_START_SLOT:-a}"
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${PHOENIX_SWITCH_PORT:-8080}:8080"
     volumes:
       - switch-data:/data
       - checkout-revisions:/revisions
@@ -66,13 +66,16 @@ services:
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
       MODEL_FAST: "${MODEL_FAST:-}"
       MODEL_STRONG: "${MODEL_STRONG:-}"
+      PHOENIX_LLM_RPM: "${PHOENIX_LLM_RPM:-12}"
+      PHOENIX_LLM_CONCURRENCY: "${PHOENIX_LLM_CONCURRENCY:-2}"
+      PHOENIX_DASHBOARD_ORIGINS: "${PHOENIX_DASHBOARD_ORIGINS:-http://localhost:${PHOENIX_DASHBOARD_PORT:-3000},http://127.0.0.1:${PHOENIX_DASHBOARD_PORT:-3000}}"
       MODEL_FALLBACKS: "${MODEL_FALLBACKS:-gemini-3.8-flash,gemini-3.6-flash}"
       TAVILY_API_KEY: "${TAVILY_API_KEY:-}"
       BRAVE_API_KEY: "${BRAVE_API_KEY:-}"
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
       GITHUB_REPO: "${GITHUB_REPO:-}"
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${PHOENIX_BRAIN_PORT:-8000}:8000"
     volumes:
       - incident-data:/data
       - checkout-revisions:/revisions
@@ -90,9 +93,12 @@ services:
       retries: 10
 
   dashboard:
-    build: ./apps/dashboard
+    build:
+      context: ./apps/dashboard
+      args:
+        NEXT_PUBLIC_BRAIN_URL: "http://127.0.0.1:${PHOENIX_BRAIN_PORT:-8000}"
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${PHOENIX_DASHBOARD_PORT:-3000}:3000"
     depends_on:
       brain:
         condition: service_healthy

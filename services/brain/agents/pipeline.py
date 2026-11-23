@@ -59,6 +59,8 @@ async def start_for_incident(incident: IncidentRecord) -> None:
             return outcome.model_dump()
 
         await bridge.step(incident.id, "outcome", finished)
+        if outcome.status == "escalated":
+            close_escalated(incident.id)
     except Exception as error:
         # Nothing awaits this task, so a crash must be visible as an event.
         logger.exception("The agent pipeline stopped for %s", incident.id)
@@ -72,26 +74,57 @@ async def start_for_incident(incident: IncidentRecord) -> None:
         _active.discard(incident.id)
 
 
-async def publish_report(incident: IncidentRecord) -> None:
+def close_escalated(incident_id: str) -> None:
+    for event in reversed(bridge.events()):
+        if event["incident_id"] == incident_id and event["type"] == "incident.restored":
+            data = event["data"]
+            bridge.store().close_escalated(
+                incident_id, active_slot=data["active_slot"], active_rev=data["active_rev"]
+            )
+            return
+
+
+def is_verified(incident_id: str) -> bool:
+    return any(
+        event["incident_id"] == incident_id
+        and event["type"] == "verification.done"
+        and event["data"]["verdict"] == "VERIFIED"
+        for event in bridge.events()
+    )
+
+
+def is_busy(incident_id: str) -> bool:
+    """The pipeline still needs the model quota before anything else may use it."""
+    return incident_id in _active and not is_verified(incident_id)
+
+
+async def publish_report(incident_id: str) -> None:
     async def publish() -> dict:
-        await report.build_report(incident.id)
+        await report.build_report(incident_id)
         return {"published": True}
 
     try:
-        await bridge.step(incident.id, "report", publish)
+        await bridge.step(incident_id, "report", publish)
     except Exception:
-        logger.exception("The report for %s could not be built", incident.id)
+        logger.exception("The report for %s could not be built", incident_id)
+
+
+async def report_release(incident: IncidentRecord) -> None:
+    await publish_report(incident.id)
 
 
 async def resume() -> None:
     """Pick up whatever a restarted brain left unfinished."""
+    for event in bridge.events():
+        released = event["type"] == "release.done" and event["data"].get("ok")
+        if released and not bridge.saved_step(event["incident_id"], "report"):
+            await publish_report(event["incident_id"])
     incident = bridge.store().current_incident()
-    if incident is None:
+    if incident is None or incident.status != "restored":
         return
-    if incident.status == "released":
-        await publish_report(incident)
-        return
-    if incident.status != "restored" or bridge.saved_step(incident.id, "outcome") is not None:
+    if outcome := bridge.saved_step(incident.id, "outcome"):
+        if outcome["status"] == "escalated":
+            close_escalated(incident.id)
         return
     last = bridge.last_step(incident.id)
     await bridge.emit(

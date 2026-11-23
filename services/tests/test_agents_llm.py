@@ -81,7 +81,8 @@ async def test_tools_run_and_answer_is_validated(db, scripted):
     type_, payload = events(db)[0]
     assert type_ == "agent.tool" and payload["ok"] and payload["actor"] == "dummy"
     assert len(payload["result_excerpt"]) <= 300
-    assert events(db)[-1][1]["usage"] == {"in": 20, "out": 10}
+    usage = events(db)[-1][1]["usage"]
+    assert (usage["in"], usage["out"], usage["calls"]) == (20, 10, 2) and usage["seconds"] >= 0
 
 
 async def test_unlisted_tool_is_rejected(db, scripted):

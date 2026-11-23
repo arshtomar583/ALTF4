@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from .agents.pipeline import publish_report, resume, start_for_incident
+from .agents.pipeline import report_release, resume, start_for_incident
 from .agents.router import agents_router
 from .event_store import ApprovalRejected, EventStore, IncidentRecord
 from .incident import IncidentEngine, RecoveryError
@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             engine = IncidentEngine(store, client, os.getenv("PHOENIX_BAD_REV"))
             app.state.engine = engine
             engine.on_restored.append(start_for_incident)
-            engine.on_released.append(publish_report)
+            engine.on_released.append(report_release)
             workers.append(asyncio.create_task(resume()))
             workers.append(asyncio.create_task(engine.watch(store.latest_id())))
             workers.append(asyncio.create_task(ReleaseRunner(engine).watch()))
@@ -65,7 +65,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="PHOENIX Incident API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        origin.strip()
+        for origin in (
+            os.getenv("PHOENIX_DASHBOARD_ORIGINS") or "http://localhost:3000,http://127.0.0.1:3000"
+        ).split(",")
+        if origin.strip()
+    ],
     allow_methods=["GET", "POST"],
     allow_headers=["Last-Event-ID", "Content-Type"],
 )

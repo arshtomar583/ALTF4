@@ -45,10 +45,14 @@ class Workspace:
             raise PermissionError("Only files in src/ can be changed")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content)
-        self.tested = False
-        return {"written": str(relative)}
+        # Every write is tested, so the commit gate always reflects the final content.
+        tests = await self.run_unit_tests()
+        if tests["ok"]:
+            return {"written": str(relative), "unit_tests": "all pass", "next": "Call commit_candidate now."}
+        return {"written": str(relative), "unit_tests": tests}
 
     async def run_unit_tests(self) -> dict:
+        self.tested = False
         async with self.lab.lock:
             result = await self.lab.test_path(self.path)
         self.tested = result["ok"]
@@ -78,7 +82,7 @@ class Workspace:
             ),
             Tool(
                 "write_file",
-                "Replace a whole file in src/ with new content.",
+                "Replace a whole file in src/ with new content. The unit tests run and their result is returned.",
                 {
                     "type": "object",
                     "properties": {"path": text, "content": text},

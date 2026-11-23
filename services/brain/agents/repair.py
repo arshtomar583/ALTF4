@@ -13,15 +13,18 @@ from .base import note, strong_model
 from .models import Candidate, Decision, IncidentContext, Verification
 
 NAME = "repair"
+MAX_SOURCE = 12_000
 SYSTEM = """You are the Repair agent on an incident team. A bad change broke checkout on the broken
 revision, and your worktree starts from it. Fix the cause with the smallest possible change.
 
-1. read_file the file the suspect diff changed.
-2. write_file the whole file back with a minimal edit in src/. Keep every unrelated line exactly as is,
-   and keep later good changes: do not roll the file back.
-3. run_unit_tests, and fix anything they catch.
-4. commit_candidate with a short message.
-5. Submit a one or two sentence rationale.
+1. The current source files are below, so your first call is write_file: there is nothing to read or test
+   before it. write_file the whole file back with a minimal edit in src/. Keep
+   every line the suspect diff did not change exactly as is.
+2. The unit tests run with every write, and they define what the shop must do. If the suspect change
+   added behaviour the tests reject, that behaviour goes: putting the suspect's own lines back to what
+   they were before it is a valid minimal fix, and usually the best one.
+3. As soon as a write reports that all tests pass, commit_candidate with a short message.
+4. Submit a one or two sentence rationale.
 
 Never edit tests, never swallow errors in a catch block, never hard-code totals or prices, and never
 branch on the environment. An independent verifier rejects all of these.
@@ -63,6 +66,8 @@ async def repair(
         f"Failing request: {ctx.failing_request.model_dump_json()}\n"
         f"Suspect diff:\n{await suspect_diff(lab, ctx, decision)}"
     )
+    for source in sorted(path.glob("src/**/*.js")):
+        prompt += f"\n\nFile {source.relative_to(path)}:\n{source.read_text()[:MAX_SOURCE]}"
     if previous:
         prompt += (
             f"\n\nYour previous fix was rejected: {previous.reason}\n"
@@ -76,7 +81,7 @@ async def repair(
         model=strong_model(),
         output_model=Rationale,
         incident_id=ctx.incident_id,
-        max_turns=10,
+        max_turns=8,
         check=check,
     )
     return Candidate(

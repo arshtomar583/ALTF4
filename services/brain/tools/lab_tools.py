@@ -31,6 +31,13 @@ def check_test(code: str) -> None:
         raise ValueError("Write at least one test() with an assertion")
 
 
+def _brief(result: dict) -> dict:
+    """A passing run needs no transcript; a failing one needs its assertion."""
+    if result["ok"]:
+        return {"ok": True}
+    return {"ok": False, "output": result["output_excerpt"][:600]}
+
+
 class Bench:
     """One verification: its regression test and the results measured in the lab."""
 
@@ -56,7 +63,8 @@ class Bench:
         check_test(code)
         self.test = code
         self._results.clear()
-        return {"saved": True}
+        # All three answers at once: a separate call per version would spend model quota.
+        return {name: _brief(await self.run_regression(name)) for name in self.revs}
 
     async def run_regression(self, rev: str) -> dict:
         if self.test is None:
@@ -95,7 +103,7 @@ class Bench:
             ),
             Tool(
                 "write_regression_test",
-                "Save your node:test file. It is placed in test/ and replaces any earlier one.",
+                "Save your node:test file and run it on broken, healthy and candidate.",
                 schema(code={"type": "string"}),
                 self.write_regression_test,
             ),

@@ -25,8 +25,9 @@ SYSTEM = """You are the Code Investigator on an incident team. Checkout broke be
 You see only the code history. You have no logs and no web access.
 
 First call git_bisect with good = the healthy revision and bad = the broken revision. It replays the
-real failing request, so trust the commit it returns. Then read that commit's diff and explain in
-plain English which changed line breaks the failing request, and why.
+real failing request, so trust the commit it returns. Its result already contains that commit's diff,
+so submit next unless the diff is cut off. Explain in plain English which changed line breaks the
+failing request, and why.
 
 Submit a finding:
 - claim: one or two short sentences a shop owner understands.
@@ -130,12 +131,13 @@ async def check_evidence(finding: Finding, lab: Lab, final: bool) -> tuple[Findi
 async def investigate(lab: Lab, ctx: IncidentContext, question: str | None = None) -> Finding:
     bisected: list[dict] = []
     count = len(await commits_between(lab, ctx.healthy_rev, ctx.broken_rev))
+    history = "the history" if count == 0 else "1 commit" if count == 1 else f"{count} commits"
     tools = []
     for tool in build_tools(lab, ctx):
         if tool.name == "git_bisect":
             tool = observed(tool, bisected.append)
             tool = announced(
-                tool, ctx.incident_id, NAME, f"Bisecting {count} commits against the failing checkout…"
+                tool, ctx.incident_id, NAME, f"Bisecting {history} against the failing checkout…"
             )
         tools.append(tool)
 
@@ -174,6 +176,7 @@ async def investigate(lab: Lab, ctx: IncidentContext, question: str | None = Non
         model=fast_model(),
         output_model=Finding,
         incident_id=ctx.incident_id,
+        max_turns=6,
         check=check,
     )
     if corrected:

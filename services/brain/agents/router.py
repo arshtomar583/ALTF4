@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+import time
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -9,12 +10,14 @@ from fastapi.responses import PlainTextResponse
 
 from .. import report
 from ..lab import Lab, LabError, get_lab
+from ..llm import LOW_PRIORITY, priority
 from . import bridge, repair, verifier
 from .base import note
 from .models import Candidate, IncidentContext, Verification
-from .pipeline import current_context
+from .pipeline import current_context, is_busy
 
 ACTOR = "chaos"
+MAX_WAIT = 300
 agents_router = APIRouter()
 _running: set[asyncio.Task] = set()
 
@@ -72,6 +75,13 @@ async def challenge(ctx: IncidentContext) -> tuple[Candidate, Verification]:
 
 
 async def _verify(lab: Lab, ctx: IncidentContext, candidate: Candidate) -> None:
+    # The incident's own fix comes first; the judge's candidate waits for it.
+    deadline = time.monotonic() + MAX_WAIT
+    if is_busy(ctx.incident_id):
+        await note(ctx.incident_id, verifier.NAME, "The judge's candidate waits for the incident's own fix")
+    while is_busy(ctx.incident_id) and time.monotonic() < deadline:
+        await asyncio.sleep(0.5)
+    priority.set(LOW_PRIORITY)
     try:
         await verifier.verify(lab, ctx, candidate.candidate_id, candidate.rev)
     except Exception as error:

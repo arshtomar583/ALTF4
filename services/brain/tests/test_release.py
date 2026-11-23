@@ -167,7 +167,7 @@ class ReleaseTests(unittest.IsolatedAsyncioTestCase):
             self.calls,
             ["checkout b", "deploy a", *["preflight a"] * 3, "switch a", *["checkout a"] * 3, "promote a"],
         )
-        self.assertEqual(self.store.current_incident().status, "released")
+        self.assertIsNone(self.store.current_incident())
         self.assertEqual(self.healthy, CANDIDATE)
         self.assertTrue(self.completion()["ok"])
 
