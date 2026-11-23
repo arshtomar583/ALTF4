@@ -49,14 +49,13 @@ async def test_same_request_fails_on_broken_and_passes_on_healthy(lab, revs):
     broken = await lab.replay(revs["broken"], REQUEST)
     assert broken["status"] == 500
     assert broken["headers"]["x-shop-revision"] == revs["broken"]
-    assert "discount" not in (await lab.replay(revs["healthy"], REQUEST))["body_excerpt"]
     assert "TypeError" in lab.logs(revs["broken"])
 
 
 async def test_bisect_finds_the_culprit_not_the_head(lab, revs):
     result = await git_bisect(lab, revs["healthy"], revs["broken"], REQUEST)
     assert result["first_bad_rev"] == revs["culprit"] != revs["broken"]
-    assert "-      totalCents: product.unitPriceCents * quantity - (discount?.amount ?? 0)," in result["diff"]
+    assert "-    const code = request.body?.discount?.code;" in result["diff"]
 
 
 async def test_bisect_rejects_an_empty_range(lab, revs):

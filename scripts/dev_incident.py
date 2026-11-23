@@ -91,18 +91,6 @@ def build_shop_repo(repo: Path, folder: str = "services/shoplite") -> dict[str, 
         broken = commit(repo, "Update checkout")
         return {"healthy": healthy, "culprit": broken, "broken": broken}
 
-    if "discount" not in shop.read_text():
-        replace(
-            shop,
-            "const { sku, quantity } = request.body ?? {};",
-            "const { sku, quantity, discount } = request.body ?? {};",
-        )
-        replace(
-            shop,
-            "totalCents: product.unitPriceCents * quantity,",
-            "totalCents: product.unitPriceCents * quantity - (discount?.amount ?? 0),",
-        )
-        healthy = commit(repo, "Support cart discounts")
     git(repo, "tag", "healthy")
 
     readme = root / "README.md"
@@ -110,8 +98,8 @@ def build_shop_repo(repo: Path, folder: str = "services/shoplite") -> dict[str, 
     commit(repo, "Add a README")
     replace(shop, '{ limit: "8kb" }', '{ limit: "16kb" }')
     commit(repo, "Allow larger carts")
-    replace(shop, "(discount?.amount ?? 0)", "discount.amount")
-    culprit = commit(repo, "Simplify discount total")
+    replace(shop, "request.body?.discount?.code", "request.body.discount.code.trim().toUpperCase()")
+    culprit = commit(repo, "Accept lowercase discount codes")
     readme.write_text(readme.read_text() + "\nRun the tests with npm test.\n")
     broken = commit(repo, "Document the tests")
     return {"healthy": healthy, "culprit": culprit, "broken": broken}

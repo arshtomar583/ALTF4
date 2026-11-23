@@ -20,10 +20,10 @@ from dev_incident import build_shop_repo, commit  # noqa: E402
 
 pytestmark = pytest.mark.asyncio
 REQUEST = FailingRequest(body={"sku": "demo-mug", "quantity": 1}, status=500)
-ERROR = "TypeError: Cannot read properties of undefined (reading 'amount')"
+ERROR = "TypeError: Cannot read properties of undefined (reading 'code')"
 CHANGED = (
-    "-      totalCents: product.unitPriceCents * quantity - (discount?.amount ?? 0),\n"
-    "+      totalCents: product.unitPriceCents * quantity - discount.amount,"
+    "-    const code = request.body?.discount?.code;\n"
+    "+    const code = request.body.discount.code.trim().toUpperCase();"
 )
 SHOP = "services/shoplite"
 URL = "https://example.com/typeerror"
@@ -228,19 +228,19 @@ async def test_runtime_guard():
             check(answer, record)
 
 
-REAL = "+      totalCents: product.unitPriceCents * quantity - discount.amount,"
+REAL = "+    const code = request.body.discount.code.trim().toUpperCase();"
 
 
 @pytest.mark.parametrize(
     ("quoted", "real", "expected"),
     [
-        ("+ totalCents:   product.unitPriceCents * quantity - discount.amount,", REAL, True),
-        ("product.unitPriceCents * quantity", REAL, True),
+        ("+ const code =   request.body.discount.code.trim().toUpperCase();", REAL, True),
+        ("request.body.discount.code", REAL, True),
         (f"{REAL} // reads a missing discount", REAL, True),
         ("sku: “demo-mug” is “required”", "sku: 'demo-mug' is \"required\"", True),
         ("discount", REAL, False),
-        ("- totalCents: product.unitPriceCents * quantity - discount.amount,", REAL, False),
-        ("+ totalCents: product.price * count - coupon.value,", REAL, False),
+        ("- const code = request.body.discount.code.trim().toUpperCase();", REAL, False),
+        ("+ const code = request.body.coupon.value;", REAL, False),
     ],
 )
 async def test_line_matching(quoted, real, expected):
@@ -249,14 +249,14 @@ async def test_line_matching(quoted, real, expected):
 
 async def test_paraphrased_diff_is_reasked_then_corrected(lab, revs):
     check = code_investigator.check_evidence
-    paraphrase = "+ totalCents: product.unitPrice * quantity - discount.amount"
+    paraphrase = "+ const code = request.body.discount.code.toUpperCase()"
     answer = code_finding(revs["culprit"], excerpt=paraphrase, ref="somewhere")
-    with pytest.raises(EvidenceMismatch, match="discount.amount,"):
+    with pytest.raises(EvidenceMismatch, match="toUpperCase"):
         await check(answer, lab, final=False)
     fixed, corrected = await check(answer, lab, final=True)
     assert corrected and fixed.evidence[0].excerpt == REAL
     shop = (await lab.git("show", f"{revs['culprit']}:{SHOP}/src/shop.js")).splitlines()
-    line = next(n for n, text in enumerate(shop, 1) if "discount.amount" in text)
+    line = next(n for n, text in enumerate(shop, 1) if ".trim().toUpperCase()" in text)
     assert fixed.evidence[0].ref == f"{SHOP}/src/shop.js:{line}"
 
 
@@ -279,8 +279,8 @@ async def test_paraphrased_log_is_reasked_then_corrected():
     check = runtime_investigator.check_evidence
     exact, corrected = check(runtime_finding(log=ERROR.replace("'", '"')), seen(), final=False)
     assert not corrected and exact.evidence[0].excerpt == ERROR.replace("'", '"')
-    answer = runtime_finding(log="TypeError: Cannot read property amount of undefined")
-    with pytest.raises(EvidenceMismatch, match="reading 'amount'"):
+    answer = runtime_finding(log="TypeError: Cannot read property code of undefined")
+    with pytest.raises(EvidenceMismatch, match="reading 'code'"):
         check(answer, seen(), final=False)
     fixed, corrected = check(answer, seen(), final=True)
     assert corrected and fixed.evidence[0].excerpt == ERROR
@@ -351,7 +351,7 @@ async def test_diagnose_isolates_agents_reasks_caps_and_resumes(monkeypatch, lab
 
 
 async def test_paraphrasing_agent_keeps_its_finding(monkeypatch, lab, ctx, revs):
-    paraphrase = "+ totalCents: product.unitPrice * quantity - discount.amount"
+    paraphrase = "+ const code = request.body.discount.code.toUpperCase()"
     bad = code_finding(revs["culprit"], excerpt=paraphrase).model_dump()
     prompts = script(monkeypatch, {
         "code": [
@@ -394,7 +394,7 @@ async def test_one_failed_investigator_does_not_lose_the_other(monkeypatch, lab,
 async def test_agents_see_only_the_shop_in_a_shared_repository(lab, ctx, folder, revs):
     repo = folder / "shop"
     (repo / "faults").mkdir(exist_ok=True)
-    (repo / "faults" / "answer.md").write_text("The fault is discount.amount")
+    (repo / "faults" / "answer.md").write_text("The fault is discount.code")
     (repo / SHOP / "README.md").write_text("Edited together\n")
     head = commit(repo, "Mixed change")
     ctx = ctx.model_copy(update={"broken_rev": head})
@@ -414,7 +414,7 @@ async def test_a_merged_fault_still_shows_its_patch(lab, ctx, folder, revs):
     repo = folder / "shop"
     git(repo, "checkout", "-q", "-b", "feature", revs["healthy"])
     shop = repo / SHOP / "src" / "shop.js"
-    shop.write_text(shop.read_text().replace("(discount?.amount ?? 0)", "discount.amount"))
+    shop.write_text(shop.read_text().replace("request.body?.discount?.code", "request.body.discount.code.trim()"))
     commit(repo, "Simplify")
     git(repo, "checkout", "-q", "-b", "trunk", revs["healthy"])
     git(repo, "merge", "-q", "--no-ff", "-m", "Merge feature", "feature")
@@ -422,7 +422,7 @@ async def test_a_merged_fault_still_shows_its_patch(lab, ctx, folder, revs):
     git(repo, "checkout", "-q", "main")
     tools = {tool.name: tool for tool in code_investigator.build_tools(lab, ctx)}
     result = await tools["git_bisect"].fn(good=revs["healthy"], bad=merge)
-    assert result["first_bad_rev"] == merge and "+      totalCents" in result["diff"]
+    assert result["first_bad_rev"] == merge and "+    const code" in result["diff"]
 
 
 async def test_unrecorded_failure_status_is_measured(monkeypatch, lab, ctx):

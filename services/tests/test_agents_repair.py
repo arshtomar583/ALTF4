@@ -17,8 +17,9 @@ from dev_incident import build_shop_repo, commit  # noqa: E402
 
 pytestmark = pytest.mark.asyncio
 SHOP = "services/shoplite"
-BAD = "quantity - discount.amount"
-FIX = "quantity - (discount?.amount ?? 0)"
+BAD = "request.body.discount.code.trim().toUpperCase()"
+FIX = "request.body?.discount?.code"
+TOTAL = "totalCents: subtotalCents - discountCents"
 TEST = """
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -177,7 +178,7 @@ def patch(*lines, file="src/shop.js"):
     return "\n".join([f"diff --git a/{file} b/{file}", "@@ -1,9 +1,9 @@", *lines])
 
 
-HEALTHY = {"src/shop.js": f"const totalCents = {FIX};\n"}
+HEALTHY = {"src/shop.js": f"const code = {FIX};\n"}
 CHEATS = {
     "deleted assertion": (patch("-  assert.equal(a, 2400);"), "assertion"),
     "skipped test": (patch("+  test.skip('x', f);"), "Skips"),
@@ -213,7 +214,7 @@ async def test_code_gate_rejects_swallowed_errors(code):
 
 async def test_code_gate_allows_honest_fixes():
     for line in (
-        f"+const totalCents = {FIX};",
+        f"+const code = {FIX};",
         "+  const off = discount?.amount || 0;",
         "+  try { a(); } catch (error) { next(error); }",
     ):
@@ -250,8 +251,8 @@ async def test_honest_fix_is_verified_from_measured_results(lab, ctx, revs, mode
 
 async def test_total_zero_cheat_is_rejected_even_if_the_model_approves(lab, ctx, revs, model):
     def cheat(text):
-        return text.replace(BAD, "quantity - (() => { try { return discount.amount; } "
-                                 "catch { return product.unitPriceCents * quantity; } })()")
+        fixed = text.replace(BAD, "(() => { try { return " + BAD + "; } catch { return undefined; } })()")
+        return fixed.replace(TOTAL, "totalCents: code === undefined ? 0 : subtotalCents - discountCents")
 
     rev = await candidate(lab, revs, "cheat", cheat)
     weak = TEST.replace("  assert.equal(response.body.totalCents, 1200);\n", "")
@@ -324,14 +325,14 @@ async def test_rejected_fix_is_retried_with_feedback_and_secrets_stay_apart(
     lab, ctx, revs, model, decided
 ):
     text = await broken_shop(lab, revs)
-    cheat = text.replace(f"product.unitPriceCents * {BAD}", "2400")
-    # 2400 satisfies the shop's own test, so only independent checks can catch it.
+    cheat = text.replace(BAD, FIX).replace(TOTAL, "totalCents: code === undefined ? 2400 : 2160")
+    # These totals satisfy the shop's own tests, so only independent checks can catch it.
     model.turns["repair"] = [*repair_turns(cheat), *repair_turns(text.replace(BAD, FIX))]
     model.turns["verifier"] = [*verifier_turns(), *verifier_turns()]
     outcome = await pipeline.run_after_restore(ctx)
 
     assert outcome.status == "verified" and outcome.candidate_id.endswith("-c2")
-    assert "Hard-codes a total" in model.prompts["repair"][4]
+    assert "The candidate answers 200" in model.prompts["repair"][4]
     verdicts = [d["verdict"] for t, d in events() if t == "verification.done"]
     assert verdicts == ["REJECTED", "VERIFIED"]
     seen = " ".join(model.prompts["verifier"])
@@ -344,7 +345,7 @@ async def test_rejected_fix_is_retried_with_feedback_and_secrets_stay_apart(
 
 async def test_three_rejections_escalate_with_the_attempts(lab, ctx, revs, model, decided):
     text = await broken_shop(lab, revs)
-    cheat = text.replace(f"product.unitPriceCents * {BAD}", "2400")
+    cheat = text.replace(BAD, FIX).replace(TOTAL, "totalCents: code === undefined ? 2400 : 2160")
     model.turns["repair"] = repair_turns(cheat) * 3
     model.turns["verifier"] = verifier_turns() * 3
     outcome = await pipeline.run_after_restore(ctx)
