@@ -42,7 +42,7 @@ export function Rail({ state, incidentOpen, recorded, onReport }: {
       </button>
       <p className="text-center text-sm text-dim">
         {recorded
-          ? "Recorded story, controls are off"
+          ? "Not live, controls are off"
           : open
             ? "An incident is open"
             : "Deploys a bad commit to the live shop"}

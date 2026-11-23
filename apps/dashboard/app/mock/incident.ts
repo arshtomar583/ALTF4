@@ -4,7 +4,7 @@ const HEALTHY = "41a8d0da7d8de73aceb0f7dbf80c4fd328a43dd6";
 const BROKEN = "b7c1e90f52d84a6c9e0d3a1f5b8274c6d9e01f23";
 const FIXED = "2dd2d9ee21e407d7cd95fe7a8ab1e1a0ad0e7f97";
 const FLAWED = "6539aaef1771cf5d41dab8eb428a1991ef43aa0a";
-const ID = "inc_recorded";
+const ID = "inc_simulated";
 const DIFF = `diff --git a/services/shoplite/src/shop.js b/services/shoplite/src/shop.js
 @@ -27,1 +27,1 @@
 -    const code = request.body.discount.code.trim().toUpperCase();
@@ -15,7 +15,7 @@ const FLAWED_DIFF = `diff --git a/services/shoplite/src/shop.js b/services/shopl
 +      totalCents: (() => { try { return subtotalCents - discountCents; } catch { return 0; } })(),`;
 const REPORT = `# Incident report: ${ID}
 
-This is the recorded story. A live incident fills this report from its own events.
+This is simulated data. A live incident fills this report from its own events.
 
 | Measure | Value |
 | --- | --- |

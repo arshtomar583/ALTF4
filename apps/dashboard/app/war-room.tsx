@@ -14,11 +14,16 @@ import { Verification } from "./components/verification";
 import { useIncident } from "./lib/use-incident";
 
 export function WarRoom() {
-  const { state, connection, incidentOpen, recorded } = useIncident();
+  const { state, connection, incidentOpen, banner, recorded } = useIncident();
   const [reading, setReading] = useState(false);
   const working = state.phase === "fixing";
   return (
     <div className="relative flex h-dvh min-h-[700px] min-w-[1180px] flex-col">
+      {banner ? (
+        <p role="status" className="shrink-0 bg-busy py-1 text-center text-lg font-bold tracking-wide text-ground">
+          ⚠ {banner}
+        </p>
+      ) : null}
       <StatusStrip state={state} connection={connection} />
       <RecoveryBanner recovered={state.recovered} />
       <Heartbeat beats={state.beats} markers={state.markers} />

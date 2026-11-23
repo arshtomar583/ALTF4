@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 
 import { play } from "../mock/incident";
+import { replay } from "../mock/replay";
 import type { PhoenixEvent } from "./events";
 import { initialState, reducer } from "./incident-state";
 
 export const BRAIN = process.env.NEXT_PUBLIC_BRAIN_URL ?? "http://127.0.0.1:8000";
-export type Connection = "Connecting" | "Live" | "Reconnecting" | "Recorded story";
+export type Connection = "Connecting" | "Live" | "Reconnecting" | "Simulated" | "Replay";
 
 export async function post(path: string, body?: object): Promise<string | null> {
   try {
@@ -57,6 +58,7 @@ async function stream(
 export function useIncident() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [connection, setConnection] = useState<Connection>("Connecting");
+  const [banner, setBanner] = useState<string | null>(null);
   const [incidentOpen, setIncidentOpen] = useState<boolean | null>(null);
 
   const checkIncident = useCallback(async () => {
@@ -69,10 +71,33 @@ export function useIncident() {
   }, []);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("mock") === "1") {
-      setConnection("Recorded story");
+    const query = new URLSearchParams(window.location.search);
+    const show = (event: PhoenixEvent) => dispatch({ type: "events", events: [event] });
+    if (query.get("mock") === "1") {
+      setConnection("Simulated");
+      setBanner("SIMULATED DATA");
       dispatch({ type: "reset" });
-      return play((event) => dispatch({ type: "events", events: [event] }));
+      return play(show);
+    }
+    if (query.get("replay") === "recorded") {
+      setConnection("Replay");
+      dispatch({ type: "reset" });
+      let stop: (() => void) | null = null;
+      let cancelled = false;
+      void import("../mock/recorded.json").then(({ default: file }) => {
+        if (cancelled) return;
+        const recording = file as unknown as Parameters<typeof replay>[0];
+        setBanner(
+          recording.recorded_at
+            ? `REPLAY of a real run · recorded ${new Date(recording.recorded_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}`
+            : "REPLAY · no run has been recorded yet",
+        );
+        stop = replay(recording, show);
+      });
+      return () => {
+        cancelled = true;
+        stop?.();
+      };
     }
 
     const abort = new AbortController();
@@ -104,5 +129,5 @@ export function useIncident() {
     return () => abort.abort();
   }, [checkIncident]);
 
-  return { state, connection, incidentOpen, recorded: connection === "Recorded story" };
+  return { state, connection, incidentOpen, banner, recorded: connection === "Simulated" || connection === "Replay" };
 }
