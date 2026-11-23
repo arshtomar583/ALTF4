@@ -39,29 +39,32 @@ export function CheckoutMonitor() {
   const result = latest ? (latest.data.ok ? "Passing" : "Failing") : "Waiting for a probe";
   const details = [
     { label: "Active slot", value: latest?.data.slot?.toUpperCase() },
-    { label: "Revision", value: latest?.data.revision },
     { label: "Response", value: latest?.data.status_code },
     { label: "Latency", value: latest ? latest.data.latency_ms + " ms" : null },
   ];
 
   return (
-    <section aria-labelledby="checkout-heading" className="rounded-2xl border border-slate-700 bg-[#141d2b] p-6 sm:p-8">
+    <section aria-labelledby="checkout-heading" className="rounded-2xl border border-slate-700 bg-[#141d2b] p-4 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="checkout-heading" className="text-sm font-medium text-slate-300">Latest checkout</h2>
-          <p aria-live="polite" className="mt-2 text-3xl font-semibold">{result}</p>
+          <p aria-live="polite" className="mt-2 text-2xl font-semibold sm:text-3xl">{result}</p>
         </div>
         <p role="status" className="rounded-full border border-slate-600 px-3 py-1 text-xs text-slate-200">
           {connection}
         </p>
       </div>
-      <dl className="mt-7 grid grid-cols-2 gap-5 border-y border-slate-700 py-5 text-sm sm:grid-cols-4">
+      <dl className="mt-5 grid grid-cols-3 gap-x-3 gap-y-4 border-y border-slate-700 py-4 text-sm sm:mt-7 sm:gap-5 sm:py-5">
         {details.map(({ label, value }) => (
           <div key={label}>
             <dt className="text-slate-300">{label}</dt>
             <dd className="mt-1 font-mono">{value ?? "–"}</dd>
           </div>
         ))}
+        <div className="col-span-full">
+          <dt className="text-slate-300">Revision</dt>
+          <dd className="mt-1 font-mono wrap-anywhere">{latest?.data.revision ?? "–"}</dd>
+        </div>
       </dl>
       <h3 className="mt-6 text-sm font-medium text-slate-300">Recent probes</h3>
       {probes.length === 0 ? (
