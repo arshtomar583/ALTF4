@@ -28,11 +28,10 @@ Run `docker compose down` to stop the services. The `incident-data` volume retai
 If Docker Engine and the Compose plugin are installed in `Ubuntu-24.04` under WSL 2, run these commands from the repository root in PowerShell.
 
 ```powershell
-wsl -d Ubuntu-24.04 -u root -- docker compose up --build --wait
-wsl -d Ubuntu-24.04 -u root -- docker compose ps
+wsl -d Ubuntu-24.04 -u root -- docker compose up --build
 ```
 
-The dashboard is available at [localhost:3000](http://localhost:3000). The PowerShell slot-switch command in the quickstart also works with the WSL setup. To stop the services, run `wsl -d Ubuntu-24.04 -u root -- docker compose down`.
+Keep that PowerShell window open while you use the dashboard at [localhost:3000](http://localhost:3000). The attached Compose session keeps Ubuntu running. In another PowerShell window, use `wsl -d Ubuntu-24.04 -u root -- docker compose ps` to check health. The PowerShell slot-switch command in the quickstart also works with the WSL setup. To stop the services, run `wsl -d Ubuntu-24.04 -u root -- docker compose down`.
 
 ### Run without Docker
 
