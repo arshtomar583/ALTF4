@@ -29,7 +29,7 @@ export const Stepper = memo(function Stepper({ reached, shown, done, onPick }: {
             disabled={index > reached}
             aria-current={index === shown ? "step" : undefined}
             onClick={() => onPick(index)}
-            className={`control flex min-h-11 items-center justify-center gap-2.5 rounded-control font-medium disabled:text-text-3 ${
+            className={`control flex min-h-11 flex-col items-center justify-center gap-x-2.5 gap-y-0.5 rounded-control py-1 text-meta sm:flex-row sm:text-base font-medium disabled:text-text-3 ${
               index === shown ? "bg-panel-2 text-text" : "text-text-2"
             }`}
           >
@@ -46,9 +46,9 @@ export const Stepper = memo(function Stepper({ reached, shown, done, onPick }: {
 
 function Stage({ icon, title, text, children }: { icon: ReactNode; title: string; text: string; children?: ReactNode }) {
   return (
-    <section className="appear grid h-full place-content-center justify-items-center gap-4 rounded-panel border border-line bg-panel p-8 text-center">
+    <section className="appear grid h-full place-content-center justify-items-center gap-4 rounded-panel border border-line bg-panel p-5 text-center sm:p-8">
       <span className="grid h-16 w-16 place-items-center rounded-full border border-line bg-panel-2 text-state">{icon}</span>
-      <h2 className="text-4xl leading-tight font-semibold text-balance">{title}</h2>
+      <h2 className="text-3xl leading-tight sm:text-4xl font-semibold text-balance">{title}</h2>
       <p className="max-w-[46ch] text-title leading-snug text-pretty text-text-2">{text}</p>
       {children}
     </section>
@@ -95,7 +95,7 @@ export function ReleaseStage({ state, onReport, onDownload }: {
       title="Verified fix is live"
       text={`Live on slot ${state.slot?.toUpperCase() ?? "—"} at ${state.revision?.slice(0, 7) ?? "—"}.`}
     >
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         <button type="button" disabled={!state.report} onClick={onReport} className="control inline-flex min-h-11 items-center gap-2 rounded-control bg-text px-5 font-medium text-bg disabled:bg-panel-2 disabled:text-text-3">
           <Page /> {state.report ? "View report" : "Writing the report…"}
         </button>

@@ -63,6 +63,16 @@ async def test_bisect_rejects_a_bad_revision_that_works(lab, revs):
         await git_bisect(lab, revs["healthy"], revs["healthy"], REQUEST)
 
 
+async def test_bisect_distinguishes_two_success_responses_with_different_prices(lab, revs):
+    path, _ = await lab.candidate_branch(revs["healthy"], "wrong-price", 1)
+    shop = path / "src" / "shop.js"
+    shop.write_text(shop.read_text().replace("totalCents: subtotalCents - discountCents", "totalCents: subtotalCents"))
+    bad = await lab.commit(path, "Omit discount from checkout total")
+    request = FailingRequest(body={**REQUEST.body, "discount": {"code": "SAVE10"}}, status=200)
+    result = await git_bisect(lab, revs["healthy"], bad, request)
+    assert result["first_bad_rev"] == bad
+
+
 async def test_bisect_finds_the_culprit_when_healthy_is_a_released_fix(lab, revs):
     path, _ = await lab.candidate_branch(revs["broken"], "released", 1)
     shop = path / "src" / "shop.js"

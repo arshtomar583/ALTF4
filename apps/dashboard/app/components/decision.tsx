@@ -50,7 +50,7 @@ export const Decision = memo(function Decision({ decision, escalation, active, o
     <Panel title={title}>
       {decision ? (
         <Scroll label="Decision">
-          <div className="appear grid grid-cols-[auto_minmax(0,1fr)] gap-x-6">
+          <div className="appear grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-6">
             <dl className="grid grid-cols-[auto_auto] gap-x-3 self-start whitespace-nowrap">
               <dt className="label self-center">Cause</dt>
               <dd className="font-semibold first-letter:uppercase">{decision.cause_type}</dd>

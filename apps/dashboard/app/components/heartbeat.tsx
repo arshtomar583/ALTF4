@@ -36,7 +36,7 @@ function Freshness({ probedAt, slot, revision, recorded }: {
   const age = probedAt === null || now === null ? null : Math.max(0, Math.round((now - probedAt) / 1000));
   const stale = !recorded && age !== null && age > STALE_AFTER;
   return (
-    <p className="tnum text-meta whitespace-nowrap text-text-2">
+    <p className="tnum text-meta sm:whitespace-nowrap text-text-2">
       {recorded ? (
         <span className="font-semibold">NOT LIVE</span>
       ) : stale ? (
@@ -64,7 +64,7 @@ export const Heartbeat = memo(function Heartbeat({ beats: current, markers: curr
   const offset = BEATS - beats.length;
   const latest = beats.at(-1);
   return (
-    <section aria-label="Checkout heartbeat" className="relative grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto] border-b border-line">
+    <section aria-label="Checkout heartbeat" className="relative grid shrink-0 grid-rows-[3rem_auto] sm:h-16 sm:grid-cols-[minmax(0,1fr)_auto] sm:grid-rows-1 border-b border-line">
       <div className="@container relative min-w-0 overflow-hidden">
         <svg
           role="img"
@@ -100,7 +100,7 @@ export const Heartbeat = memo(function Heartbeat({ beats: current, markers: curr
           );
         })}
       </div>
-      <div className="flex items-center gap-3 border-l border-line pr-3 pl-4">
+      <div className="flex items-center justify-between gap-2 border-line px-3 py-1 sm:gap-3 sm:border-l sm:pl-4">
         <div>
           <Freshness probedAt={probedAt} slot={slot} revision={revision} recorded={recorded} />
           <p className="text-meta whitespace-nowrap text-text-2">

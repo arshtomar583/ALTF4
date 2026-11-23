@@ -16,12 +16,18 @@ export function Dialog({ label, className, onClose, children }: {
   useEffect(() => {
     dialog.current?.showModal();
   }, []);
-  const close = () => dialog.current?.close();
+  const close = () => {
+    dialog.current?.close();
+    onClose();
+  };
   return (
     <dialog
       ref={dialog}
       aria-label={label}
-      onClose={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
+      }}
       onClick={(event) => event.target === dialog.current && close()}
       className={`appear border-line bg-panel text-text backdrop:bg-black/70 ${className}`}
     >
@@ -38,10 +44,10 @@ export function Drawer({ title, file, markdown, prUrl, onClose }: {
   onClose: () => void;
 }) {
   return (
-    <Dialog label={title} onClose={onClose} className="m-0 ml-auto h-dvh max-h-none w-[46rem] max-w-[92vw] border-l">
+    <Dialog label={title} onClose={onClose} className="m-0 ml-auto h-dvh max-h-none w-[46rem] max-w-full border-l">
       {(close) => (
         <div className="flex h-full flex-col">
-          <div className="flex shrink-0 items-center gap-2.5 border-b border-line px-6 py-3">
+          <div className="flex shrink-0 flex-wrap items-center gap-2.5 border-b border-line px-6 py-3">
             <h2 className="flex-1 text-title font-semibold">{title}</h2>
             {prUrl && /^https:\/\//.test(prUrl) ? (
               <a href={prUrl} target="_blank" rel="noreferrer" className="control inline-flex min-h-11 items-center gap-1.5 text-meta underline">

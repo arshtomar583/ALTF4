@@ -40,12 +40,12 @@ function duration(start: number | null, end: number | null, now: number): string
 function Metric({ label, value, note, none }: { label: string; value: string | null; note: string | null; none: string }) {
   return (
     <div className="min-w-0">
-      <dt className="label whitespace-nowrap">{label}</dt>
-      <dd className="flex h-14 items-center gap-2.5 whitespace-nowrap">
+      <dt className="label xl:whitespace-nowrap">{label}</dt>
+      <dd className="flex flex-wrap items-center gap-x-2.5 xl:h-14 xl:flex-nowrap">
         {value === null ? (
           <span className="text-text-3">{none}</span>
         ) : (
-          <span className="text-timer leading-[1.1] font-medium tabular-nums">
+          <span className="text-2xl leading-[1.1] sm:text-4xl xl:text-timer font-medium tabular-nums">
             <span key={label === "Failed checkouts" ? value : undefined} className={label === "Failed checkouts" ? "bump inline-block" : undefined}>{value}</span>
           </span>
         )}
@@ -90,7 +90,7 @@ export const StatusStrip = memo(function StatusStrip(props: {
   const none = phase === "down" ? "Detecting…" : "No incident yet";
   const note = (done: boolean) => (!done ? null : closed ? "last incident" : "final");
   return (
-    <header className="relative grid h-24 shrink-0 grid-cols-[19.5rem_minmax(0,1fr)_9.5rem] items-center gap-x-6 px-5">
+    <header className="relative grid shrink-0 items-center gap-3 px-3 py-3 sm:grid-cols-[1fr_auto] xl:h-24 xl:grid-cols-[19.5rem_minmax(0,1fr)_9.5rem] xl:gap-x-6 xl:px-5 xl:py-0">
       <div className="min-w-0">
         <div className="flex items-baseline gap-3">
           <h1 className="text-base font-semibold tracking-[0.18em]">PHOENIX</h1>
@@ -116,7 +116,7 @@ export const StatusStrip = memo(function StatusStrip(props: {
           ))}
         </p>
       </div>
-      <dl className="grid min-w-0 grid-cols-3 gap-x-6">
+      <dl className="grid min-w-0 grid-cols-2 gap-3 sm:col-span-2 sm:row-start-2 sm:grid-cols-3 xl:col-span-1 xl:col-start-2 xl:row-start-1 xl:gap-x-6">
         <Metric label="Time to restore" value={duration(openedAt, restoredAt, now)} note={note(restoredAt !== null)} none={none} />
         <Metric
           label="Time to verified fix"

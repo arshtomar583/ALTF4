@@ -56,6 +56,7 @@ export function WarRoom() {
   const showReport = useCallback(() => setOpen("report"), []);
   const showPack = useCallback(() => setOpen("pack"), []);
   const showHelp = useCallback(() => setOpen("help"), []);
+  const showBreak = useCallback(() => setOpen("break"), []);
 
   const { phase } = state;
   const signal = useSignal(state.probedAt, connection, recorded);
@@ -76,7 +77,7 @@ export function WarRoom() {
   const keys = useRef<(key: string) => void>(() => undefined);
   useEffect(() => {
     keys.current = (key) => {
-      if (key === "b" && controls.breakIt.enabled) setOpen("break");
+      if (key === "b" && controls.breakIt.enabled) showBreak();
       if (key === "a" && controls.approve.enabled) controls.approve.run();
       if (key === "d") {
         setFollowing(!following);
@@ -99,7 +100,7 @@ export function WarRoom() {
   const closed = state.feed.find((event) => event.type === "incident.closed");
   const idle = phase === "healthy" && state.incidentId === null;
   return (
-    <div className="relative flex h-dvh min-h-[700px] min-w-[1180px] flex-col">
+    <div className="relative flex min-h-dvh flex-col xl:h-dvh xl:min-h-[700px]">
       {banner ? (
         <p className="shrink-0 bg-text py-1 text-center text-title leading-snug font-semibold text-bg">
           <Warn /> {banner}
@@ -130,19 +131,19 @@ export function WarRoom() {
         revision={state.revision}
         recorded={recorded}
       />
-      <main className="grid min-h-0 flex-1 grid-cols-[14rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_2.75rem] gap-4 p-4 2xl:grid-cols-[14rem_minmax(0,1fr)_18rem]">
-        <div className="col-start-1 row-span-2 row-start-1 grid min-h-0">
-          <Rail controls={controls} agents={state.agents} onHelp={showHelp} />
+      <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 xl:grid-cols-[14rem_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_2.75rem] xl:gap-4 xl:p-4 2xl:grid-cols-[14rem_minmax(0,1fr)_18rem]">
+        <div className="grid min-h-0 xl:col-start-1 xl:row-span-2 xl:row-start-1">
+          <Rail controls={controls} agents={state.agents} onHelp={showHelp} onBreak={showBreak} />
         </div>
-        <div className="col-start-2 row-start-1 min-h-0 min-w-0 2xl:row-span-2">
+        <div className="row-start-1 min-h-0 min-w-0 xl:col-start-2 2xl:row-span-2">
           {idle ? (
             <Empty beats={state.beats} slot={state.slot} revision={state.revision} last={closed?.summary ?? null} healthy={signal && lastOk} />
           ) : (
-            <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
+            <div className="grid min-h-0 gap-3 xl:h-full xl:grid-rows-[auto_minmax(0,1fr)]">
               <Stepper reached={reached} shown={shown} done={phase === "recovered"} onPick={setPicked} />
               {shown === 0 ? <RestoreStage state={state} /> : null}
               {shown === 1 ? (
-                <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_1.25rem_7.5rem]">
+                <div className="grid min-h-0 gap-y-3 xl:grid-rows-[minmax(0,1fr)_1.25rem_7.5rem] xl:gap-y-0">
                   <Findings {...state.findings} active={working} over={state.decision !== null || state.escalation !== null} />
                   <Thread joined={state.findings.code !== null && state.findings.runtime !== null} />
                   <Decision decision={state.decision} escalation={state.escalation} active={working} onPack={showPack} />
@@ -160,7 +161,7 @@ export function WarRoom() {
       ) : null}
       {open === "pack" && state.escalation ? <Drawer title="Evidence pack" file="phoenix-evidence-pack.md" markdown={state.escalation.pack} onClose={close} /> : null}
       {open === "help" ? <Help following={following} onClose={close} /> : null}
-      {open === "break" ? <ConfirmBreak onConfirm={controls.breakIt.run} onClose={close} /> : null}
+      {open === "break" ? <ConfirmBreak enabled={controls.breakIt.enabled} onConfirm={controls.breakIt.run} onClose={close} /> : null}
     </div>
   );
 }

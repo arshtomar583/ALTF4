@@ -30,8 +30,8 @@ export function Panel({ title, aside, children, className = "" }: {
 }) {
   return (
     <section className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-panel border border-line bg-panel ${className}`}>
-      <div className="flex shrink-0 items-center gap-3 px-5 pt-4">
-        <h2 className="min-w-0 flex-1 truncate text-base font-semibold 2xl:text-title">{title}</h2>
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-4 xl:flex-nowrap">
+        <h2 className="min-w-0 grow text-base font-semibold xl:flex-1 xl:truncate 2xl:text-title">{title}</h2>
         {aside}
       </div>
       {children}

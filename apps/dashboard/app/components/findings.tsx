@@ -106,7 +106,7 @@ export const Findings = memo(function Findings({ code, runtime, active, over }: 
   over: boolean;
 }) {
   return (
-    <div className="grid min-h-0 grid-cols-2 gap-3">
+    <div className="grid min-h-0 gap-3 md:grid-cols-2">
       <FindingCard letter="A" actor="code_investigator" finding={code} active={active} over={over} />
       <FindingCard letter="B" actor="runtime_investigator" finding={runtime} active={active} over={over} />
     </div>

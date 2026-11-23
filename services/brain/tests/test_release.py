@@ -148,7 +148,7 @@ class ReleaseTests(unittest.IsolatedAsyncioTestCase):
         return httpx.Response(
             200,
             headers={"X-Phoenix-Slot": slot, "X-Shop-Revision": self.revisions[slot]},
-            json={"status": "accepted" if passed else "rejected"},
+            json={"status": "accepted" if passed else "rejected", "totalCents": 1200},
         )
 
     async def run_release(self):

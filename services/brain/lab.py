@@ -17,6 +17,7 @@ from pathlib import Path
 import httpx
 
 from .agents.models import FailingRequest
+from .checkout import check_charge
 
 PORT = 3003
 URL = f"http://127.0.0.1:{PORT}"
@@ -247,12 +248,18 @@ class Lab:
                     response = await client.request(
                         request.method, handle.url + request.path, json=request.body
                     )
+                    if response.is_server_error:
+                        # Express can defer its error logger until after sending the response.
+                        # Let Node handle another request before terminating the replay server.
+                        with suppress(httpx.RequestError):
+                            await client.get(handle.url + "/health", timeout=1)
             except (LabError, httpx.RequestError) as error:
                 return {"status": 0, "body_excerpt": f"{type(error).__name__}: {error}", "headers": {}}
             finally:
                 await self._stop_and_reap()
         return {
             "status": response.status_code,
+            "checkout_ok": check_charge(response, request.body)[0] if isinstance(request.body, dict) and request.path == "/checkout" else None,
             "body_excerpt": response.text[:500],
             "headers": dict(response.headers),
         }
