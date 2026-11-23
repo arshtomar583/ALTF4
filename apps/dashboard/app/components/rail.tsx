@@ -41,7 +41,7 @@ function Problem({ text }: { text: string | null }) {
   return text ? <p role="alert" className="text-meta leading-snug wrap-anywhere text-text"><Warn /> {text}</p> : null;
 }
 
-export function Rail({ controls, agents, onHelp }: { controls: Controls; agents: Roster; onHelp: () => void }) {
+export function Rail({ controls, agents, onHelp, onBreak }: { controls: Controls; agents: Roster; onHelp: () => void; onBreak: () => void }) {
   const { breakIt, judge } = controls;
   return (
     <aside aria-label="Judge controls and agents" className="flex min-h-0 flex-col gap-1.5 overflow-y-auto rounded-panel border border-line bg-panel px-3 pt-3 pb-1">
@@ -50,7 +50,7 @@ export function Rail({ controls, agents, onHelp }: { controls: Controls; agents:
           type="button"
           aria-label="Break checkout"
           disabled={!breakIt.enabled}
-          onClick={breakIt.run}
+          onClick={onBreak}
           className={`control grid h-28 w-28 shrink-0 place-content-center justify-items-center rounded-full border-2 text-title font-semibold ${
             breakIt.enabled ? "border-down text-text" : "border-line text-text-3"
           }`}

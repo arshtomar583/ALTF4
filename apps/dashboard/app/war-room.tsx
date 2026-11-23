@@ -69,6 +69,7 @@ export function WarRoom() {
   const showReport = useCallback(() => setOpen("report"), []);
   const showPack = useCallback(() => setOpen("pack"), []);
   const showHelp = useCallback(() => setOpen("help"), []);
+  const showBreak = useCallback(() => setOpen("break"), []);
 
   const { phase } = state;
   const signal = useSignal(state.probedAt, connection, recorded);
@@ -82,7 +83,7 @@ export function WarRoom() {
   const keys = useRef<(key: string) => void>(() => undefined);
   useEffect(() => {
     keys.current = (key) => {
-      if (key === "b" && controls.breakIt.enabled) setOpen("break");
+      if (key === "b" && controls.breakIt.enabled) showBreak();
       if (key === "a" && controls.approve.enabled) controls.approve.run();
       if (key === "d") setDirector((before) => !before);
       if (key === "r" && state.report) setOpen("report");
@@ -135,7 +136,7 @@ export function WarRoom() {
       />
       <main className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_2.75rem] gap-3 p-3 2xl:grid-cols-[16rem_minmax(0,1fr)_17rem]">
         <div className="col-start-1 row-span-2 row-start-1 grid min-h-0">
-          <Rail controls={controls} agents={state.agents} onHelp={showHelp} />
+          <Rail controls={controls} agents={state.agents} onHelp={showHelp} onBreak={showBreak} />
         </div>
         <div className="col-start-2 row-start-1 min-h-0 min-w-0 2xl:row-span-2">
           {idle ? (
@@ -171,7 +172,7 @@ export function WarRoom() {
       ) : null}
       {open === "pack" && state.escalation ? <Drawer title="Evidence pack" markdown={state.escalation.pack} onClose={close} /> : null}
       {open === "help" ? <Help director={director} onClose={close} /> : null}
-      {open === "break" ? <ConfirmBreak onConfirm={controls.breakIt.run} onClose={close} /> : null}
+      {open === "break" ? <ConfirmBreak enabled={controls.breakIt.enabled} onConfirm={controls.breakIt.run} onClose={close} /> : null}
     </div>
   );
 }
