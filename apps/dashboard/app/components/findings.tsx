@@ -47,14 +47,12 @@ function Proof({ item }: { item: Evidence }) {
   );
 }
 
-function FindingCard({ letter, actor, finding, active, over, lit, dim }: {
+function FindingCard({ letter, actor, finding, active, over }: {
   letter: string;
   actor: string;
   finding: Finding | null;
   active: boolean;
   over: boolean;
-  lit: boolean;
-  dim: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const title = (
@@ -65,9 +63,9 @@ function FindingCard({ letter, actor, finding, active, over, lit, dim }: {
   );
   if (!finding) {
     return (
-      <Panel title={title} spot={actor} lit={lit} dim={dim}>
+      <Panel title={title}>
         {over ? (
-          <p className="px-4 pt-1 text-text-2"><Warn /> No finding</p>
+          <p className="px-5 pt-2 text-text-2"><Warn /> No finding</p>
         ) : (
           <Skeleton text={active ? "Investigating…" : "Starts once checkout is restored"} />
         )}
@@ -85,7 +83,7 @@ function FindingCard({ letter, actor, finding, active, over, lit, dim }: {
     </span>
   );
   return (
-    <Panel title={title} aside={aside} spot={actor} lit={lit} dim={dim}>
+    <Panel title={title} aside={aside}>
       <Scroll label={`Finding ${letter}`}>
         <div className="appear">
           <p className={`leading-snug ${open ? "" : "line-clamp-3"}`}>{finding.claim}</p>
@@ -101,17 +99,16 @@ function FindingCard({ letter, actor, finding, active, over, lit, dim }: {
   );
 }
 
-export const Findings = memo(function Findings({ code, runtime, active, over, focus }: {
+export const Findings = memo(function Findings({ code, runtime, active, over }: {
   code: Finding | null;
   runtime: Finding | null;
   active: boolean;
   over: boolean;
-  focus: string | null;
 }) {
   return (
     <div className="grid min-h-0 gap-3 md:grid-cols-2">
-      <FindingCard letter="A" actor="code_investigator" finding={code} active={active} over={over} lit={focus === "code"} dim={focus !== null && focus !== "code"} />
-      <FindingCard letter="B" actor="runtime_investigator" finding={runtime} active={active} over={over} lit={focus === "runtime"} dim={focus !== null && focus !== "runtime"} />
+      <FindingCard letter="A" actor="code_investigator" finding={code} active={active} over={over} />
+      <FindingCard letter="B" actor="runtime_investigator" finding={runtime} active={active} over={over} />
     </div>
   );
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Decision } from "./components/decision";
 import { Empty } from "./components/empty";
@@ -13,9 +13,10 @@ import { Rail } from "./components/rail";
 import { RecoveryBanner } from "./components/recovery-banner";
 import { Drawer } from "./components/report-drawer";
 import { StatusStrip } from "./components/status-strip";
+import { ReleaseStage, RestoreStage, stageOf, Stepper } from "./components/stages";
 import { Thread } from "./components/thread";
 import { Verification } from "./components/verification";
-import type { PhoenixEvent } from "./lib/events";
+import { download } from "./lib/download";
 import type { Phase } from "./lib/incident-state";
 import { useControls } from "./lib/use-controls";
 import { useIncident } from "./lib/use-incident";
@@ -30,21 +31,6 @@ const SAID: Partial<Record<Phase, string>> = {
 };
 
 const SIGNAL_MS = 6000;
-
-type Spot = { panel: string; actor: string } | null;
-
-/** The story panel that the newest event belongs to. */
-function spotlight(feed: PhoenixEvent[]): Spot {
-  for (const { type, actor } of feed) {
-    if (actor === "code_investigator") return { panel: "code", actor };
-    if (actor === "runtime_investigator") return { panel: "runtime", actor };
-    if (type === "decision.made" || type === "incident.escalated") return { panel: "decision", actor };
-    if (actor === "coordinator" && type.startsWith("agent.")) return { panel: "decision", actor };
-    if (["repair", "verifier", "chaos", "release"].includes(actor) && type !== "chaos.break") return { panel: "verification", actor };
-    if (type === "incident.opened") return null;
-  }
-  return null;
-}
 
 type Open = "report" | "pack" | "help" | "break" | null;
 
@@ -63,7 +49,8 @@ function useSignal(probedAt: number | null, connection: string, recorded: boolea
 export function WarRoom() {
   const { state, connection, incidentOpen, banner, recorded } = useIncident();
   const controls = useControls(state, incidentOpen, recorded, connection === "Live");
-  const [director, setDirector] = useState(true);
+  const [following, setFollowing] = useState(true);
+  const [picked, setPicked] = useState<number | null>(null);
   const [open, setOpen] = useState<Open>(null);
   const close = useCallback(() => setOpen(null), []);
   const showReport = useCallback(() => setOpen("report"), []);
@@ -75,9 +62,16 @@ export function WarRoom() {
   const signal = useSignal(state.probedAt, connection, recorded);
   const lastOk = state.beats.at(-1)?.ok ?? false;
   const working = phase === "fixing";
-  const staged = director && !state.closed && ["fixing", "verified", "releasing"].includes(phase);
-  const spot = useMemo(() => (staged ? spotlight(state.feed) : null), [staged, state.feed]);
-  const focus = spot?.panel ?? null;
+  const reached = stageOf(state);
+  // A new stage takes the screen back, unless the viewer asked to stay.
+  useEffect(() => {
+    if (following) setPicked(null);
+  }, [reached, following]);
+  const shown = Math.min(picked ?? reached, reached);
+  const report = state.report;
+  const saveReport = useCallback(() => {
+    if (report) download("phoenix-incident-report.md", report.markdown);
+  }, [report]);
 
   // The listener is attached once and always sees the newest state.
   const keys = useRef<(key: string) => void>(() => undefined);
@@ -85,7 +79,10 @@ export function WarRoom() {
     keys.current = (key) => {
       if (key === "b" && controls.breakIt.enabled) showBreak();
       if (key === "a" && controls.approve.enabled) controls.approve.run();
-      if (key === "d") setDirector((before) => !before);
+      if (key === "d") {
+        setFollowing(!following);
+        setPicked(following ? shown : null);
+      }
       if (key === "r" && state.report) setOpen("report");
       if (key === "?") setOpen("help");
     };
@@ -134,7 +131,7 @@ export function WarRoom() {
         revision={state.revision}
         recorded={recorded}
       />
-      <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 xl:grid-cols-[16rem_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_2.75rem] 2xl:grid-cols-[16rem_minmax(0,1fr)_17rem]">
+      <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 xl:grid-cols-[14rem_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_2.75rem] xl:gap-4 xl:p-4 2xl:grid-cols-[14rem_minmax(0,1fr)_18rem]">
         <div className="grid min-h-0 xl:col-start-1 xl:row-span-2 xl:row-start-1">
           <Rail controls={controls} agents={state.agents} onHelp={showHelp} onBreak={showBreak} />
         </div>
@@ -142,36 +139,28 @@ export function WarRoom() {
           {idle ? (
             <Empty beats={state.beats} slot={state.slot} revision={state.revision} last={closed?.summary ?? null} healthy={signal && lastOk} />
           ) : (
-            <div className="grid min-h-0 gap-y-3 xl:h-full xl:gap-y-0 xl:grid-rows-[minmax(0,1fr)_1.25rem_6.75rem_0.75rem_10rem] 2xl:grid-rows-[minmax(0,1fr)_1.25rem_7rem_0.75rem_12.5rem]">
-              <Findings {...state.findings} active={working} over={state.decision !== null || state.escalation !== null} focus={focus} />
-              <Thread joined={state.findings.code !== null && state.findings.runtime !== null} />
-              <Decision
-                decision={state.decision}
-                escalation={state.escalation}
-                active={working}
-                lit={focus === "decision"}
-                dim={focus !== null && focus !== "decision"}
-                onPack={showPack}
-              />
-              <span className="hidden xl:block" />
-              <Verification
-                spot={focus === "verification" ? (spot?.actor ?? "verifier") : "verifier"}
-                candidates={state.candidates}
-                active={working}
-                lit={focus === "verification"}
-                dim={focus !== null && focus !== "verification"}
-                controls={controls}
-              />
+            <div className="grid min-h-0 gap-3 xl:h-full xl:grid-rows-[auto_minmax(0,1fr)]">
+              <Stepper reached={reached} shown={shown} done={phase === "recovered"} onPick={setPicked} />
+              {shown === 0 ? <RestoreStage state={state} /> : null}
+              {shown === 1 ? (
+                <div className="grid min-h-0 gap-y-3 xl:grid-rows-[minmax(0,1fr)_1.25rem_7.5rem] xl:gap-y-0">
+                  <Findings {...state.findings} active={working} over={state.decision !== null || state.escalation !== null} />
+                  <Thread joined={state.findings.code !== null && state.findings.runtime !== null} />
+                  <Decision decision={state.decision} escalation={state.escalation} active={working} onPack={showPack} />
+                </div>
+              ) : null}
+              {shown === 2 ? <Verification candidates={state.candidates} active={working} controls={controls} /> : null}
+              {shown === 3 ? <ReleaseStage state={state} onReport={showReport} onDownload={saveReport} /> : null}
             </div>
           )}
         </div>
         <Feed events={state.feed} />
       </main>
       {open === "report" && state.report ? (
-        <Drawer title="Incident report" markdown={state.report.markdown} prUrl={state.report.prUrl} onClose={close} />
+        <Drawer title="Incident report" file="phoenix-incident-report.md" markdown={state.report.markdown} prUrl={state.report.prUrl} onClose={close} />
       ) : null}
-      {open === "pack" && state.escalation ? <Drawer title="Evidence pack" markdown={state.escalation.pack} onClose={close} /> : null}
-      {open === "help" ? <Help director={director} onClose={close} /> : null}
+      {open === "pack" && state.escalation ? <Drawer title="Evidence pack" file="phoenix-evidence-pack.md" markdown={state.escalation.pack} onClose={close} /> : null}
+      {open === "help" ? <Help following={following} onClose={close} /> : null}
       {open === "break" ? <ConfirmBreak enabled={controls.breakIt.enabled} onConfirm={controls.breakIt.run} onClose={close} /> : null}
     </div>
   );

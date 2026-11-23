@@ -22,29 +22,16 @@ export function Dot({ actor, className = "" }: { actor: string; className?: stri
   return <span aria-hidden className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${className}`} style={{ background: agent(actor).color }} />;
 }
 
-/** A panel on the stage. Director mode lights the one that just heard from its agent. */
-export function Panel({ title, aside, children, spot, lit = false, dim = false, className = "" }: {
+export function Panel({ title, aside, children, className = "" }: {
   title: ReactNode;
   aside?: ReactNode;
   children: ReactNode;
-  spot?: string;
-  lit?: boolean;
-  dim?: boolean;
   className?: string;
 }) {
   return (
-    <section
-      data-dim={dim}
-      className={`stage relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-panel border border-line bg-panel ${className}`}
-    >
-      <span
-        aria-hidden
-        className="mood absolute inset-x-0 top-0 h-px"
-        data-on={lit}
-        style={{ background: spot ? agent(spot).color : undefined }}
-      />
-      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-2 xl:flex-nowrap">
-        <h2 className="min-w-0 grow text-base xl:flex-1 xl:truncate font-semibold 2xl:text-title">{title}</h2>
+    <section className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-panel border border-line bg-panel ${className}`}>
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-4 xl:flex-nowrap">
+        <h2 className="min-w-0 grow text-base font-semibold xl:flex-1 xl:truncate 2xl:text-title">{title}</h2>
         {aside}
       </div>
       {children}
@@ -54,7 +41,7 @@ export function Panel({ title, aside, children, spot, lit = false, dim = false, 
 
 export function Scroll({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div role="region" aria-label={label} tabIndex={0} className="min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-3">
+    <div role="region" aria-label={label} tabIndex={0} className="min-h-0 flex-1 overflow-y-auto px-5 pt-2 pb-4">
       {children}
     </div>
   );
@@ -80,7 +67,7 @@ export function Code({ text, diff = false }: { text: string; diff?: boolean }) {
 /** A still placeholder with the shape of what will arrive. */
 export function Skeleton({ text, lines = 2 }: { text: string; lines?: number }) {
   return (
-    <div className="px-4 pt-1">
+    <div className="px-5 pt-2">
       <p className="text-text-2">{text}</p>
       {Array.from({ length: lines }, (_, index) => (
         <div key={index} aria-hidden className="mt-2 h-3 rounded-sm bg-panel-2" style={{ width: `${88 - index * 22}%` }} />

@@ -21,12 +21,10 @@ function Reasoning({ text }: { text: string }) {
   });
 }
 
-export const Decision = memo(function Decision({ decision, escalation, active, lit, dim, onPack }: {
+export const Decision = memo(function Decision({ decision, escalation, active, onPack }: {
   decision: DecisionData | null;
   escalation: { reason: string; pack: string } | null;
   active: boolean;
-  lit: boolean;
-  dim: boolean;
   onPack: () => void;
 }) {
   const title = (
@@ -41,7 +39,7 @@ export const Decision = memo(function Decision({ decision, escalation, active, l
       </button>
     ) : null;
     return (
-      <Panel title={title} aside={button} spot="coordinator" lit={lit} dim={dim}>
+      <Panel title={title} aside={button}>
         <Scroll label="Escalation">
           <p className="leading-snug"><Warn /> {escalation.reason}. Checkout stays on the healthy version.</p>
         </Scroll>
@@ -49,7 +47,7 @@ export const Decision = memo(function Decision({ decision, escalation, active, l
     );
   }
   return (
-    <Panel title={title} spot="coordinator" lit={lit} dim={dim}>
+    <Panel title={title}>
       {decision ? (
         <Scroll label="Decision">
           <div className="appear grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-6">

@@ -76,7 +76,7 @@ else
   fail "An incident is open" "finish it on the dashboard, or run ./scripts/reset.sh"
 fi
 
-if model=$(timeout 15 docker compose exec -T brain python -c 'import asyncio; from brain import llm; print(asyncio.run(llm.ping()))' 2>/dev/null); then
+if model=$(timeout 15 docker compose exec -T brain python -c 'import asyncio; from brain import llm; print(asyncio.run(llm.ping()))' </dev/null 2>/dev/null); then
   pass "Live model call works ($model)"
 else
   fail "The live model call failed within 15s" "check the key and its quota; see Troubleshooting in README.md"
