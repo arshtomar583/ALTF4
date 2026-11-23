@@ -7,6 +7,7 @@ from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
+from uuid import uuid4
 
 from pydantic import BaseModel
 
@@ -19,6 +20,7 @@ class CheckoutProbe(BaseModel):
     revision: str | None
     discount: bool = False
     cart_total_cents: int | None = None
+    request_body: dict[str, Any] | None = None
 
 
 class IncidentRecord(BaseModel):
@@ -103,21 +105,32 @@ class EventStore:
         summary: str,
         incident_id: str | None = None,
     ) -> int:
-        occurred_at = datetime.now(timezone.utc).isoformat()
         with self._connect() as db:
-            cursor = db.execute(
-                """INSERT INTO events (type, occurred_at, payload, incident_id, actor, summary)
-                VALUES (?, ?, ?, ?, ?, ?)""",
-                (event_type, occurred_at, json.dumps(data), incident_id, actor, summary),
-            )
-            event_id = cursor.lastrowid
-            assert event_id is not None
-            return event_id
+            return self._insert_event(db, event_type, data, actor=actor, summary=summary, incident_id=incident_id)
+
+    @staticmethod
+    def _insert_event(
+        db: sqlite3.Connection,
+        event_type: str,
+        data: dict[str, Any],
+        *,
+        actor: str,
+        summary: str,
+        incident_id: str | None,
+    ) -> int:
+        cursor = db.execute(
+            """INSERT INTO events (type, occurred_at, payload, incident_id, actor, summary)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (event_type, datetime.now(timezone.utc).isoformat(), json.dumps(data), incident_id, actor, summary),
+        )
+        event_id = cursor.lastrowid
+        assert event_id is not None
+        return event_id
 
     def record_probe(self, probe: CheckoutProbe) -> None:
         self.emit(
             "checkout.probe",
-            probe.model_dump(mode="json"),
+            probe.model_dump(mode="json", exclude={"request_body"} if probe.request_body is None else set()),
             actor="probe",
             summary=checkout_summary(probe.ok),
         )
@@ -160,3 +173,64 @@ class EventStore:
         record = dict(row)
         record["failing_request"] = json.loads(record["failing_request"])
         return IncidentRecord.model_validate(record)
+
+    def open_incident(
+        self,
+        *,
+        broken_slot: Literal["a", "b"],
+        broken_rev: str,
+        healthy_rev: str,
+        failing_request: dict[str, Any],
+    ) -> None:
+        incident_id = f"inc_{uuid4().hex}"
+        opened_at = datetime.now(timezone.utc).isoformat()
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if db.execute("SELECT 1 FROM incidents WHERE closed_at IS NULL LIMIT 1").fetchone():
+                return
+            db.execute(
+                """INSERT INTO incidents (id, opened_at, broken_rev, broken_slot, healthy_rev, failing_request)
+                VALUES (?, ?, ?, ?, ?, ?)""",
+                (incident_id, opened_at, broken_rev, broken_slot, healthy_rev, json.dumps(failing_request)),
+            )
+            self._insert_event(
+                db,
+                "incident.opened",
+                {
+                    "broken_slot": broken_slot,
+                    "broken_rev": broken_rev,
+                    "healthy_rev": healthy_rev,
+                    "failing_request": failing_request,
+                },
+                incident_id=incident_id,
+                actor="coordinator",
+                summary=f"Checkout incident opened on slot {broken_slot.upper()}",
+            )
+
+    def mark_restored(self, incident: IncidentRecord, active_slot: Literal["a", "b"]) -> None:
+        now = datetime.now(timezone.utc)
+        elapsed = max(0, (now - datetime.fromisoformat(incident.opened_at)).total_seconds())
+        data = {
+            "active_slot": active_slot,
+            "active_rev": incident.healthy_rev,
+            "seconds_to_restore": round(elapsed, 3),
+        }
+        with self._connect() as db:
+            updated = db.execute(
+                "UPDATE incidents SET status = 'restored' WHERE id = ? AND status = 'open' AND closed_at IS NULL",
+                (incident.id,),
+            )
+            if not updated.rowcount:
+                return
+            db.execute(
+                "INSERT INTO steps (incident_id, step, completed_at, payload) VALUES (?, ?, ?, ?)",
+                (incident.id, "restore", now.isoformat(), json.dumps(data)),
+            )
+            self._insert_event(
+                db,
+                "incident.restored",
+                data,
+                incident_id=incident.id,
+                actor="coordinator",
+                summary=f"Restored checkout on slot {active_slot.upper()}",
+            )
