@@ -48,7 +48,7 @@ type Open = "report" | "pack" | "help" | "break" | null;
 
 export function WarRoom() {
   const { state, connection, incidentOpen, banner, recorded } = useIncident();
-  const controls = useControls(state, incidentOpen, recorded);
+  const controls = useControls(state, incidentOpen, recorded, connection === "Live");
   const [director, setDirector] = useState(true);
   const [open, setOpen] = useState<Open>(null);
   const close = useCallback(() => setOpen(null), []);
@@ -124,7 +124,7 @@ export function WarRoom() {
           {idle ? (
             <Empty waiting={state.beats.length === 0} last={closed?.summary ?? null} />
           ) : (
-            <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_1.25rem_5.75rem_0.75rem_10rem] 2xl:grid-rows-[minmax(0,1fr)_1.25rem_7rem_0.75rem_12.5rem]">
+            <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_1.25rem_6.75rem_0.75rem_10rem] 2xl:grid-rows-[minmax(0,1fr)_1.25rem_7rem_0.75rem_12.5rem]">
               <Findings {...state.findings} active={working} over={state.decision !== null || state.escalation !== null} focus={focus} />
               <Thread joined={state.findings.code !== null && state.findings.runtime !== null} />
               <Decision
