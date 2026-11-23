@@ -2,6 +2,13 @@ name: phoenix
 
 x-shop: &shop
   build: ./services/shoplite
+  command: ["node", "/app/shop-runner.cjs"]
+  depends_on:
+    version-switch:
+      condition: service_healthy
+  volumes:
+    - checkout-revisions:/app/revisions:ro
+    - ./services/version_switch/shop-runner.cjs:/app/shop-runner.cjs:ro
   healthcheck:
     test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
     interval: 3s
@@ -12,30 +19,31 @@ services:
   shop-a:
     <<: *shop
     environment:
-      SHOP_REVISION: starter-a
+      PHOENIX_SLOT: a
 
   shop-b:
     <<: *shop
     environment:
-      SHOP_REVISION: starter-b
+      PHOENIX_SLOT: b
 
   version-switch:
-    build: ./services
+    build:
+      context: ./services
+      target: switch
     command: ["python", "-m", "uvicorn", "version_switch.api:app", "--host", "0.0.0.0", "--port", "8080"]
     environment:
       SHOP_A_URL: http://shop-a:3001
       SHOP_B_URL: http://shop-b:3001
       PHOENIX_SWITCH_STATE_PATH: /data/switch-state.json
+      PHOENIX_REVISIONS_PATH: /revisions
+      PHOENIX_SOURCE_GIT: /source.git
       PHOENIX_START_SLOT: "${PHOENIX_START_SLOT:-a}"
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - switch-data:/data
-    depends_on:
-      shop-a:
-        condition: service_healthy
-      shop-b:
-        condition: service_healthy
+      - checkout-revisions:/revisions
+      - ./.git:/source.git:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/state', timeout=1).close()"]
       interval: 3s
@@ -47,6 +55,8 @@ services:
     command: ["python", "-m", "uvicorn", "brain.api:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       PHOENIX_CHECKOUT_URL: http://version-switch:8080/checkout
+      PHOENIX_SWITCH_URL: http://version-switch:8080
+      PHOENIX_BAD_REV: "${PHOENIX_BAD_REV:-}"
       PHOENIX_DB_PATH: /data/phoenix.sqlite3
       PHOENIX_PROBE_INTERVAL_SECONDS: "${PHOENIX_PROBE_INTERVAL_SECONDS:-2}"
     ports:
@@ -55,6 +65,10 @@ services:
       - incident-data:/data
     depends_on:
       version-switch:
+        condition: service_healthy
+      shop-a:
+        condition: service_healthy
+      shop-b:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=1).close()"]
@@ -78,3 +92,4 @@ services:
 volumes:
   incident-data:
   switch-data:
+  checkout-revisions:
