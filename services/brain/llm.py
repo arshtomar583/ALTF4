@@ -153,6 +153,29 @@ def gemini_client() -> genai.Client:
     return genai.Client(api_key=key, http_options=options)
 
 
+async def ping() -> str:
+    """Make one tiny live call and return the model that answered. For the preflight check."""
+    from .agents.base import fast_model
+
+    model = fast_model()
+    if model.startswith("gemini-"):
+        try:
+            await gemini_client().aio.models.generate_content(
+                model=model,
+                contents="Say ok.",
+                config=gemini.GenerateContentConfig(max_output_tokens=10),
+            )
+            return model
+        except (ModelUnavailable, gemini_errors.APIError):
+            if not os.getenv("ANTHROPIC_API_KEY"):
+                raise
+            model = CLAUDE_FAST
+    await client().messages.create(
+        model=model, max_tokens=10, messages=[{"role": "user", "content": "Say ok."}]
+    )
+    return model
+
+
 class ClaudeChat:
     """Append-only: thinking blocks stay valid only while earlier turns are unchanged."""
 

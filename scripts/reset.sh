@@ -2,6 +2,7 @@
 # Return the demo to a healthy shop. Deletes this project's incident and revision volumes.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+. scripts/common.sh
 
 fail() {
   echo "PHOENIX reset failed: $*" >&2
@@ -9,7 +10,7 @@ fail() {
 }
 
 [ -f .env ] || fail "there is no .env. Copy .env.example to .env first."
-bad_rev=$(sed -n 's/^PHOENIX_BAD_REV=//p' .env | tail -n 1 | tr -d '"'"'"'[:space:]')
+bad_rev=$(setting PHOENIX_BAD_REV)
 [[ $bad_rev =~ ^[0-9a-f]{40}$ ]] || fail "PHOENIX_BAD_REV in .env must be the full SHA of the fault commit."
 
 git fetch origin main fault/bad-checkout
@@ -25,9 +26,8 @@ docker compose up -d
 
 deadline=$((SECONDS + 90))
 while [ $SECONDS -lt $deadline ]; do
-  if curl -sf -m 2 127.0.0.1:8000/health >/dev/null && state=$(curl -sf -m 2 127.0.0.1:8080/state); then
-    # The stream never ends, so curl stops on its own after two seconds.
-    probe=$(curl -sN -m 2 127.0.0.1:8000/events | grep '"type": "checkout.probe"' | tail -n 1 || true)
+  if curl -sf -m 2 "$BRAIN/health" >/dev/null && state=$(curl -sf -m 2 "$SWITCH/state"); then
+    probe=$(raw_events "" | grep '"type": "checkout.probe"' | tail -n 1 || true)
     if [[ $probe == *'"ok": true'* ]]; then
       slot=$(sed -n 's/.*"active_slot": *"\([ab]\)".*/\1/p' <<<"$state" | tr ab AB)
       revision=$(sed -n 's/.*"revision": *"\([0-9a-f]\{7\}\).*/\1/p' <<<"$probe")
