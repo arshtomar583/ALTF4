@@ -9,7 +9,7 @@ type Control = { enabled: boolean; label: string; busy: boolean; hint: string | 
 export type Controls = { breakIt: Control; judge: Control; approve: Control };
 
 /** Everything a judge can do, with the reason whenever it is not allowed. */
-export function useControls(state: IncidentState, incidentOpen: boolean | null, recorded: boolean): Controls {
+export function useControls(state: IncidentState, incidentOpen: boolean | null, recorded: boolean, connected: boolean): Controls {
   const [sending, setSending] = useState<string | null>(null);
   const [problems, setProblems] = useState<Record<string, string | null>>({});
 
@@ -32,15 +32,15 @@ export function useControls(state: IncidentState, incidentOpen: boolean | null, 
 
   return {
     breakIt: {
-      enabled: !recorded && !open && !broken && sending === null,
+      enabled: connected && !open && !broken && sending === null,
       label: "BREAK",
       busy: sending === "break",
-      hint: recorded ? notLive : open || broken ? "An incident is open" : sending === "break" ? "Deploying the bad commit…" : "Deploys a bad commit to the live shop",
+      hint: recorded ? notLive : !connected ? "Not connected to the brain" : open || broken ? "An incident is open" : sending === "break" ? "Deploying the bad commit…" : "Deploys a bad commit to the live shop",
       problem: problems.break ?? null,
       run: () => void send("break", "/chaos/break", { fault: "bad_commit" }),
     },
     judge: {
-      enabled: !recorded && afterFix && !waiting && sending === null,
+      enabled: connected && afterFix && !waiting && sending === null,
       label: "Judge: submit a bad candidate",
       busy: waiting !== null,
       hint: recorded ? null : waiting ? "Judge's candidate queued → verifying…" : afterFix ? "Must be rejected" : "Available after a verified fix",
@@ -48,7 +48,7 @@ export function useControls(state: IncidentState, incidentOpen: boolean | null, 
       run: () => void send("judge", "/chaos/bad-candidate"),
     },
     approve: {
-      enabled: !recorded && candidate !== null && afterFix && !state.closed && !releasing,
+      enabled: connected && candidate !== null && afterFix && !state.closed && !releasing,
       label: releasing ? "Releasing…" : state.phase === "recovered" ? "Released" : "Approve release",
       busy: releasing,
       hint: null,

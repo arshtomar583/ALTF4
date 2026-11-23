@@ -89,7 +89,7 @@ function FindingCard({ letter, actor, finding, active, over, lit, dim }: {
       <Scroll label={`Finding ${letter}`}>
         <div className="appear">
           <p className={`leading-snug ${open ? "" : "line-clamp-3"}`}>{finding.claim}</p>
-          {finding.claim.length > 150 ? (
+          {finding.claim.length > 190 ? (
             <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="control -my-2 min-h-11 text-meta text-text-2 underline underline-offset-2">
               {open ? "Show less" : "Show the full claim"}
             </button>
