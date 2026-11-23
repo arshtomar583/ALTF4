@@ -6,10 +6,11 @@ The starter runs two ShopLite slots, a traffic switch, a synthetic checkout prob
 
 ## Quickstart
 
-1. Install Docker with Docker Compose v2. From the repository root, start the services.
+1. From the repository root, build and start the services. Compose waits for all five services to pass their health checks.
 
    ```sh
-   docker compose up --build
+   docker compose up --build --wait
+   docker compose ps
    ```
 
 2. Open [the dashboard](http://localhost:3000). Wait for the latest checkout to show **Passing** and the active slot to show **A**.
@@ -21,6 +22,17 @@ The starter runs two ShopLite slots, a traffic switch, a synthetic checkout prob
    ```
 
 Run `docker compose down` to stop the services. The `incident-data` volume retains the probe history. To change the starting slot or probe interval, copy `.env.example` to `.env` and edit the values.
+
+### Docker Engine in Ubuntu on Windows
+
+If Docker Engine and the Compose plugin are installed in `Ubuntu-24.04` under WSL 2, run these commands from the repository root in PowerShell.
+
+```powershell
+wsl -d Ubuntu-24.04 -u root -- docker compose up --build --wait
+wsl -d Ubuntu-24.04 -u root -- docker compose ps
+```
+
+The dashboard is available at [localhost:3000](http://localhost:3000). The PowerShell slot-switch command in the quickstart also works with the WSL setup. To stop the services, run `wsl -d Ubuntu-24.04 -u root -- docker compose down`.
 
 ### Run without Docker
 
