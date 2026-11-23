@@ -96,7 +96,7 @@ services:
     build:
       context: ./apps/dashboard
       args:
-        NEXT_PUBLIC_BRAIN_URL: "http://127.0.0.1:${PHOENIX_BRAIN_PORT:-8000}"
+        NEXT_PUBLIC_BRAIN_URL: "${NEXT_PUBLIC_BRAIN_URL:-http://127.0.0.1:${PHOENIX_BRAIN_PORT:-8000}}"
     ports:
       - "127.0.0.1:${PHOENIX_DASHBOARD_PORT:-3000}:3000"
     depends_on:
