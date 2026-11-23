@@ -15,9 +15,14 @@ export function createShop(revision) {
   });
 
   app.post("/checkout", (request, response) => {
-    const { sku, quantity } = request.body ?? {};
+    const { sku, quantity, discount } = request.body ?? {};
     if (sku !== product.sku || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
       response.status(400).json({ status: "rejected", message: "Invalid product or quantity" });
+      return;
+    }
+
+    if (discount && discount.code !== "SAVE10") {
+      response.status(400).json({ status: "rejected", message: "Unknown discount code" });
       return;
     }
 
@@ -25,7 +30,7 @@ export function createShop(revision) {
       status: "accepted",
       sku,
       quantity,
-      totalCents: product.unitPriceCents * quantity,
+      totalCents: product.unitPriceCents * quantity - (discount?.amount ?? 0),
       revision,
     });
   });
