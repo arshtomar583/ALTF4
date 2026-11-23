@@ -59,10 +59,23 @@ services:
       PHOENIX_BAD_REV: "${PHOENIX_BAD_REV:-}"
       PHOENIX_DB_PATH: /data/phoenix.sqlite3
       PHOENIX_PROBE_INTERVAL_SECONDS: "${PHOENIX_PROBE_INTERVAL_SECONDS:-2}"
+      PHOENIX_SHOP_REPO: /revisions/repo
+      PHOENIX_LAB_DIR: /data/lab
+      PHOENIX_LOG_DIR: /data/logs
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      MODEL_FAST: "${MODEL_FAST:-}"
+      MODEL_STRONG: "${MODEL_STRONG:-}"
+      MODEL_FALLBACKS: "${MODEL_FALLBACKS:-gemini-3.8-flash,gemini-3.6-flash}"
+      TAVILY_API_KEY: "${TAVILY_API_KEY:-}"
+      BRAVE_API_KEY: "${BRAVE_API_KEY:-}"
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
+      GITHUB_REPO: "${GITHUB_REPO:-}"
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
       - incident-data:/data
+      - checkout-revisions:/revisions
     depends_on:
       version-switch:
         condition: service_healthy

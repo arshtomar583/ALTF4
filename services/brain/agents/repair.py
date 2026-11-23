@@ -1,6 +1,5 @@
 """Write the smallest fix for the decided cause, in an isolated worktree."""
 
-from pathlib import PurePosixPath
 from typing import Any
 
 from pydantic import BaseModel
@@ -10,7 +9,7 @@ from ..llm import AnswerRejected, run_agent
 from ..tools.fs_tools import Workspace
 from ..tools.git_tools import config_diff
 from . import bridge
-from .base import clip, note, strong_model
+from .base import note, strong_model
 from .models import Candidate, Decision, IncidentContext, Verification
 
 NAME = "repair"
@@ -40,12 +39,11 @@ async def suspect_diff(lab: Lab, ctx: IncidentContext, decision: Decision) -> st
         return await lab.shop_git("diff", ctx.healthy_rev, ctx.broken_rev)
 
 
-async def propose(candidate: Candidate, incident_id: str, actor: str, summary: str) -> Candidate:
+async def announce(candidate: Candidate, incident_id: str, actor: str, summary: str) -> None:
     data: dict[str, Any] = candidate.model_dump(include={"candidate_id", "rev", "diff", "by"})
     await bridge.emit(
         "candidate.proposed", incident_id=incident_id, actor=actor, summary=summary, data=data
     )
-    return candidate
 
 
 async def repair(
@@ -81,14 +79,13 @@ async def repair(
         max_turns=10,
         check=check,
     )
-    candidate = Candidate(
+    return Candidate(
         candidate_id=f"{ctx.incident_id}-c{n}",
         rev=workspace.rev,
         diff=await workspace.diff(),
         rationale=answer.rationale,
         by="agent",
     )
-    return await propose(candidate, ctx.incident_id, NAME, f"Proposes fix {n} for verification")
 
 
 async def restore_config(lab: Lab, ctx: IncidentContext, n: int) -> Candidate:
@@ -106,12 +103,10 @@ async def restore_config(lab: Lab, ctx: IncidentContext, n: int) -> Candidate:
         else:
             await lab.git("rm", "-q", "--", f":/{file}", cwd=path)
     rev = await lab.commit(path, "Restore healthy configuration")
-    candidate = Candidate(
+    return Candidate(
         candidate_id=f"{ctx.incident_id}-c{n}",
         rev=rev,
         diff=await lab.git("diff", ctx.broken_rev, rev),
         rationale=f"Restores {', '.join(files)} from the healthy revision.",
         by="agent",
     )
-    names = ", ".join(PurePosixPath(file).name for file in files)
-    return await propose(candidate, ctx.incident_id, NAME, clip(f"Restores healthy {names}", 90))

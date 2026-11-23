@@ -32,7 +32,17 @@ async def container_logs(slot: str, since_s: int = 120) -> str | dict:
     return {"error": f"No logs for slot {slot}: {reason}"}
 
 
-def log_tools(lab: Lab) -> list[Tool]:
+def log_tools(lab: Lab, broken_slot: str, broken_rev: str) -> list[Tool]:
+    async def slot_logs(slot: str, since_s: int = 120) -> str | dict:
+        output = await container_logs(slot, since_s)
+        if isinstance(output, str) or slot != broken_slot:
+            return output
+        # Inside Docker the brain cannot read other containers. The lab replayed this same request.
+        text = lab.logs(await lab.resolve(broken_rev))
+        if not text.strip():
+            return output
+        return {"source": f"lab replay of the failing request on {broken_rev[:12]}", "logs": text[-TAIL:]}
+
     async def lab_logs(rev: str) -> str | dict:
         text = lab.logs(await lab.resolve(rev))
         return text[-TAIL:] if text.strip() else {"error": f"The lab has no logs for {rev}"}
@@ -49,7 +59,7 @@ def log_tools(lab: Lab) -> list[Tool]:
                 },
                 "required": ["slot"],
             },
-            container_logs,
+            slot_logs,
         ),
         Tool(
             "lab_logs",

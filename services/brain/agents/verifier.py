@@ -263,6 +263,7 @@ async def verify(lab: Lab, ctx: IncidentContext, candidate_id: str, rev: str) ->
         incident_id=ctx.incident_id,
         actor=NAME,
         summary=clip(f"{verb}: {verification.reason}", 90),
-        data=verification.model_dump(),
+        # Approval matches the verdict to this exact commit.
+        data=verification.model_dump() | {"rev": revs["candidate"]},
     )
     return verification

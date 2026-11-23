@@ -154,17 +154,6 @@ async def test_completed_step_is_not_rerun(db):
     assert await bridge.step("inc-2", "decide", work) == {"n": 2}
 
 
-async def test_emit_uses_the_team_store_when_it_can(db, monkeypatch):
-    seen = []
-
-    def team_emit(self, event_type, data, *, actor, summary, incident_id=None):
-        seen.append((event_type, data, actor, summary, incident_id))
-
-    monkeypatch.setattr(bridge.event_store.EventStore, "emit", team_emit, raising=False)
-    await bridge.emit("agent.note", incident_id="i", actor="a", summary="s")
-    assert seen == [("agent.note", {}, "a", "s", "i")]
-
-
 async def test_events_have_one_shape(db):
     await bridge.emit("agent.note", incident_id="i", actor="a", summary="s", data={"x": 1})
     event = bridge.events()[0]

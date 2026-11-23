@@ -302,6 +302,8 @@ async def test_repair_accepts_repository_paths(lab, revs):
     root, _ = await lab.candidate_branch(revs["broken"], "paths", 1)
     workspace = Workspace(lab, root, revs["broken"])
     assert BAD in await workspace.read_file(f"{SHOP}/src/shop.js")
+    with pytest.raises(FileNotFoundError, match="src/shop.js"):
+        await workspace.read_file("shop.js")
     with pytest.raises(PermissionError):
         await workspace.write_file(f"{SHOP}/test/checkout.test.js", "x")
 

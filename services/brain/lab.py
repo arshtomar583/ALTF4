@@ -2,12 +2,14 @@
 
 import asyncio
 import atexit
+import fcntl
 import hashlib
 import os
 import re
 import shutil
 import signal
-from contextlib import suppress
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -23,7 +25,7 @@ TEST_TIMEOUT = 15
 # The shop's folder inside PHOENIX commits. A repo with the shop at its root works too.
 SHOP_DIR = "services/shoplite"
 REGRESSION_FILE = "phoenix-regression.test.js"
-IDENTITY = ["-c", "user.name=PHOENIX", "-c", "user.email=phoenix@localhost"]
+IDENTITY = ["-c", "user.name=PHOENIX Repair", "-c", "user.email=repair@phoenix.local"]
 
 
 class LabError(Exception):
@@ -89,6 +91,22 @@ class Lab:
             raise LabError(f"git {args[0]}: {output.strip()[:500]}")
         return output
 
+    @asynccontextmanager
+    async def git_write(self) -> AsyncIterator[None]:
+        """Keep two brains from writing to the shared repository at once."""
+        with (self.root / "git.lock").open("w") as handle:
+            deadline = asyncio.get_running_loop().time() + 30
+            while True:
+                try:
+                    fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if asyncio.get_running_loop().time() > deadline:
+                        raise LabError("Another process is holding the git lock") from None
+                    await asyncio.sleep(0.05)
+            # Closing the file releases the lock, also when the process is killed.
+            yield
+
     async def resolve(self, rev: str) -> str:
         output = await self.git("rev-parse", "--verify", "--end-of-options", f"{rev}^{{commit}}")
         return output.strip()
@@ -145,13 +163,14 @@ class Lab:
     async def worktree(self, rev: str) -> Path:
         rev = await self.resolve(rev)
         path = self.root / rev[:12]
-        if (path / ".git").exists():
-            await self.git("reset", "-q", "--hard", rev, cwd=path)
-            await self.git("clean", "-fdq", "-e", "node_modules", cwd=path)
-        else:
-            shutil.rmtree(path, ignore_errors=True)
-            await self.git("worktree", "prune")
-            await self.git("worktree", "add", "-q", "--detach", str(path), rev)
+        async with self.git_write():
+            if (path / ".git").exists():
+                await self.git("reset", "-q", "--hard", rev, cwd=path)
+                await self.git("clean", "-fdq", "-e", "node_modules", cwd=path)
+            else:
+                shutil.rmtree(path, ignore_errors=True)
+                await self.git("worktree", "prune")
+                await self.git("worktree", "add", "-q", "--detach", str(path), rev)
         shop = path / await self.shop()
         await self._link_deps(shop)
         return shop
@@ -272,7 +291,7 @@ class Lab:
         branch = f"phoenix/inc-{slug}-c{n}"
         path = self.root / f"candidate-{slug}-c{n}"
         base = await self.resolve(base_rev)
-        async with self.lock:
+        async with self.lock, self.git_write():
             # A brain killed mid-repair leaves a half-written worktree: start it over.
             shutil.rmtree(path, ignore_errors=True)
             await self.git("worktree", "prune")
@@ -287,9 +306,14 @@ class Lab:
         # Ignore the dependency symlink even when the shop has no .gitignore.
         exclude = self.root / "exclude"
         exclude.write_text("node_modules\n")
-        await self.git("-c", f"core.excludesFile={exclude}", "add", "-A", cwd=path)
-        await self.git(*IDENTITY, "commit", "-q", "-m", message, cwd=path)
-        return (await self.git("rev-parse", "HEAD", cwd=path)).strip()
+        async with self.git_write():
+            await self.git("-c", f"core.excludesFile={exclude}", "add", "-A", cwd=path)
+            await self.git(*IDENTITY, "commit", "-q", "-m", message, cwd=path)
+        sha = (await self.git("rev-parse", "HEAD", cwd=path)).strip()
+        # The version switch deploys from the shared repository, so the commit must be there.
+        if await self.resolve(sha) != sha:
+            raise LabError(f"{sha[:12]} is not in the shared repository")
+        return sha
 
     def logs(self, rev: str, start: int = 0) -> str:
         path = self.log_path(rev)

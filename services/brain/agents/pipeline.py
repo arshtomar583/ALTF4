@@ -1,12 +1,13 @@
 """Turn a restored incident into a verified candidate, or escalate. Never touches live slots."""
 
 import asyncio
+import logging
 import os
 from collections.abc import Awaitable, Callable
-
 from pathlib import Path
-from typing import Any
 
+from .. import report
+from ..event_store import IncidentRecord
 from ..lab import Lab, LabError, get_lab
 from ..llm import AgentFailed
 from . import bridge, code_investigator, coordinator, repair, runtime_investigator, verifier
@@ -21,10 +22,12 @@ from .models import (
 )
 
 MAX_ATTEMPTS = 3
+logger = logging.getLogger(__name__)
+_active: set[str] = set()
 Investigate = Callable[[Lab, IncidentContext], Awaitable[Finding]]
 
 
-def context_for(incident: Any) -> IncidentContext:
+def context_for(incident: IncidentRecord) -> IncidentContext:
     """Build the context from the store's incident record."""
     return IncidentContext(
         incident_id=incident.id,
@@ -38,11 +41,67 @@ def context_for(incident: Any) -> IncidentContext:
 
 def current_context() -> IncidentContext | None:
     """The open incident, or the last one this layer worked on."""
-    store = bridge.store()
-    if hasattr(store, "current_incident") and (incident := store.current_incident()):
+    if incident := bridge.store().current_incident():
         return context_for(incident)
     saved = bridge.latest_step("context")
     return IncidentContext.model_validate(saved) if saved else None
+
+
+async def start_for_incident(incident: IncidentRecord) -> None:
+    """Run the pipeline once for a restored incident. Saved steps make a second start resume."""
+    if incident.id in _active or bridge.saved_step(incident.id, "outcome") is not None:
+        return
+    _active.add(incident.id)
+    try:
+        outcome = await run_after_restore(context_for(incident))
+
+        async def finished() -> dict:
+            return outcome.model_dump()
+
+        await bridge.step(incident.id, "outcome", finished)
+    except Exception as error:
+        # Nothing awaits this task, so a crash must be visible as an event.
+        logger.exception("The agent pipeline stopped for %s", incident.id)
+        await note(
+            incident.id,
+            coordinator.NAME,
+            "The agents hit an unexpected problem; checkout stays on the healthy version",
+            {"error": f"{type(error).__name__}: {error}"[:300]},
+        )
+    finally:
+        _active.discard(incident.id)
+
+
+async def publish_report(incident: IncidentRecord) -> None:
+    async def publish() -> dict:
+        await report.build_report(incident.id)
+        return {"published": True}
+
+    try:
+        await bridge.step(incident.id, "report", publish)
+    except Exception:
+        logger.exception("The report for %s could not be built", incident.id)
+
+
+async def resume() -> None:
+    """Pick up whatever a restarted brain left unfinished."""
+    incident = bridge.store().current_incident()
+    if incident is None:
+        return
+    if incident.status == "released":
+        await publish_report(incident)
+        return
+    if incident.status != "restored" or bridge.saved_step(incident.id, "outcome") is not None:
+        return
+    last = bridge.last_step(incident.id)
+    await bridge.emit(
+        "system.recovered",
+        incident_id=incident.id,
+        actor="system",
+        summary=f"Back after a restart, continuing after {last}" if last else "Back after a restart",
+        data={"last_step": last},
+    )
+    await start_for_incident(incident)
 
 
 async def observe(ctx: IncidentContext) -> IncidentContext:
@@ -123,7 +182,16 @@ async def propose(
             return (await repair.restore_config(lab, ctx, n)).model_dump()
         return (await repair.repair(lab, ctx, decision, n, previous)).model_dump()
 
-    return Candidate.model_validate(await bridge.step(ctx.incident_id, f"repair.c{n}", run))
+    candidate = Candidate.model_validate(await bridge.step(ctx.incident_id, f"repair.c{n}", run))
+
+    # Announced only once the commit is saved: a restart must never reuse this ID for another commit.
+    async def announce() -> dict:
+        summary = f"Proposes fix {n} for verification"
+        await repair.announce(candidate, ctx.incident_id, repair.NAME, summary)
+        return {"announced": candidate.rev}
+
+    await bridge.step(ctx.incident_id, f"proposed.c{n}", announce)
+    return candidate
 
 
 async def verify(ctx: IncidentContext, candidate: Candidate, n: int) -> Verification:
@@ -173,6 +241,9 @@ async def _investigate(
     async def run() -> dict:
         return (await investigate(lab, ctx)).model_dump()
 
+    # Once the decision is saved, a finding that was missing can no longer change it.
+    if bridge.saved_step(ctx.incident_id, "decide") and not bridge.saved_step(ctx.incident_id, key):
+        return None
     try:
         # A failed investigation is not checkpointed, so a restart tries it again.
         return Finding.model_validate(await bridge.step(ctx.incident_id, key, run))

@@ -1,7 +1,7 @@
-"""Adapt the AI layer to the shared event store.
+"""Connect the AI layer to the shared event store.
 
-Uses EventStore.emit when it exists. Before that, events go straight into the
-shared events table. Agent checkpoints live in agent_steps in the same database.
+Agent checkpoints live in agent_steps, in the same database. The store's own
+steps table has no unique key per step and only accepts incidents it opened.
 """
 
 import json
@@ -44,16 +44,7 @@ def _connect() -> sqlite3.Connection:
 
 
 async def emit(type: str, *, incident_id: str, actor: str, summary: str, data: dict | None = None) -> None:
-    data = data or {}
-    if team_emit := getattr(store(), "emit", None):
-        team_emit(type, data, actor=actor, summary=summary, incident_id=incident_id)
-        return
-    payload = {"incident_id": incident_id, "actor": actor, "summary": summary, **data}
-    with closing(_connect()) as db, db:
-        db.execute(
-            "INSERT INTO events (type, occurred_at, payload) VALUES (?, ?, ?)",
-            (type, datetime.now(timezone.utc).isoformat(), json.dumps(payload)),
-        )
+    store().emit(type, data or {}, actor=actor, summary=summary, incident_id=incident_id)
 
 
 async def step(incident_id: str, key: str, fn: Callable[[], Awaitable[Any]]) -> Any:
@@ -77,6 +68,17 @@ def saved_step(incident_id: str, key: str) -> Any:
     return json.loads(row["output"]) if row else None
 
 
+def last_step(incident_id: str) -> str | None:
+    """The agent step this incident completed most recently."""
+    with closing(_connect()) as db:
+        row = db.execute(
+            """SELECT key FROM agent_steps WHERE incident_id = ? AND key != 'context'
+            ORDER BY completed_at DESC LIMIT 1""",
+            (incident_id,),
+        ).fetchone()
+    return row["key"] if row else None
+
+
 def latest_step(key: str) -> Any:
     """The newest saved output for a key, across incidents."""
     with closing(_connect()) as db:
@@ -87,16 +89,13 @@ def latest_step(key: str) -> Any:
 
 
 def events() -> list[dict]:
-    """Every event in the team shape, whichever store wrote it."""
+    """Every recorded event, oldest first."""
     with closing(_connect()) as db:
-        rows = [dict(row) for row in db.execute("SELECT * FROM events ORDER BY id")]
+        rows = db.execute(
+            "SELECT id, type, occurred_at, incident_id, actor, summary, payload FROM events ORDER BY id"
+        ).fetchall()
     result = []
-    for row in rows:
-        data = json.loads(row["payload"])
-        event = {key: row[key] for key in ("id", "type", "occurred_at")}
-        for key in ("incident_id", "actor", "summary"):
-            event[key] = row[key] if row.get(key) is not None else data.get(key)
-            if key not in row:
-                data.pop(key, None)
-        result.append(event | {"data": data})
+    for row in map(dict, rows):
+        data = json.loads(row.pop("payload"))
+        result.append(row | {"data": data})
     return result

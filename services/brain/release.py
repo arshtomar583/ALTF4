@@ -71,6 +71,7 @@ class ReleaseRunner:
 
             await self.engine.promote(target, release.revision)
             self.store.finish_release(incident, release, active_slot=target, active_rev=release.revision)
+            self.engine.notify(self.engine.on_released, incident)
 
     async def stop_before_switch(
         self, incident: IncidentRecord, release: ReleaseRecord, previous: Slot, reason: str

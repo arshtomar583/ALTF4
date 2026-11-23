@@ -27,8 +27,9 @@ MAX_EXCERPT = 300
 MAX_TOKENS = 16_000
 MAX_RETRY_DELAY = 45
 FAILOVER_TIMEOUT = 20
-BUSY_SECONDS = 120
-DEFAULT_FALLBACKS = "gemini-3.6-flash,gemini-3.5-flash-lite"
+BUSY_SECONDS = 600
+# These two allow only 20 free requests a day each, so they are a reserve.
+DEFAULT_FALLBACKS = "gemini-3.8-flash,gemini-3.6-flash"
 
 
 class AgentFailed(Exception):
@@ -134,6 +135,10 @@ _busy_until: dict[str, float] = {}
 class _Unavailable(Exception):
     """This model cannot answer now; another one might."""
 
+    def __init__(self, reason: str, seconds: float):
+        super().__init__(reason)
+        self.seconds = seconds
+
 
 class GeminiChat:
     """Model turns are replayed untouched, because they carry thought signatures."""
@@ -188,18 +193,35 @@ class GeminiChat:
 
     async def _generate(self) -> gemini.GenerateContentResponse:
         """Retry each model once. A busy or used-up model hands over to the next fallback."""
+        skipped: dict[str, float] = {}
+        problems: list[str] = []
         while True:
-            if self.fallbacks and time.monotonic() < _busy_until.get(self.model, 0):
+            free_at = _busy_until.get(self.model, 0)
+            if time.monotonic() >= free_at:
+                try:
+                    return await self._generate_once_or_twice()
+                except _Unavailable as error:
+                    problems.append(str(error))
+                    # Other agents skip this model for a while instead of finding out themselves.
+                    free_at = time.monotonic() + error.seconds
+                    _busy_until[self.model] = free_at
+            skipped[self.model] = free_at
+            if self.fallbacks:
                 self.model = self.fallbacks.pop(0)
                 continue
+            # Every model was tried. A short rate limit is worth waiting out, once.
+            model, free_at = min(skipped.items(), key=lambda item: item[1])
+            wait = free_at - time.monotonic()
+            if wait > MAX_RETRY_DELAY and problems:
+                raise AgentFailed(f"{self.name} {'; '.join(problems)[-400:]}")
+            # With every model marked busy earlier, the mark may be stale, so ask rather than give up.
+            await asyncio.sleep(max(0, wait) if wait <= MAX_RETRY_DELAY else 0)
+            self.model = model
             try:
                 return await self._generate_once_or_twice()
             except _Unavailable as error:
-                # Other agents skip this model for a while instead of finding out themselves.
-                _busy_until[self.model] = time.monotonic() + BUSY_SECONDS
-                if not self.fallbacks:
-                    raise AgentFailed(f"{self.name} {error}") from error
-                self.model = self.fallbacks.pop(0)
+                _busy_until[model] = time.monotonic() + error.seconds
+                raise AgentFailed(f"{self.name} {error}") from error
 
     async def _generate_once_or_twice(self) -> gemini.GenerateContentResponse:
         models = gemini_client().aio.models
@@ -217,16 +239,17 @@ class GeminiChat:
                     raise AgentFailed(f"{self.name} {detail}") from error
                 details = json.dumps(error.details, default=str)
                 if "PerDay" in details:
-                    raise _Unavailable(f"daily free quota is used up: {detail}") from error
+                    raise _Unavailable(f"daily free quota is used up: {detail}", 3600) from error
                 asked = re.search(r'"retryDelay": "([\d.]+)s"', details)
                 delay = float(asked[1]) if asked else 2
                 # Waiting out a long rate limit costs more than moving to another model.
-                if attempt == 2 or (self.fallbacks and delay > 5):
-                    raise _Unavailable(detail) from error
+                if attempt == 2 or (self.fallbacks and delay > 20):
+                    raise _Unavailable(detail, delay if error.code == 429 else BUSY_SECONDS) from error
                 await asyncio.sleep(min(delay, MAX_RETRY_DELAY))
             except Exception as error:
                 if attempt == 2 or self.fallbacks:
-                    raise _Unavailable(f"could not reach the model: {type(error).__name__}") from error
+                    reason = f"could not reach {self.model}: {type(error).__name__}"
+                    raise _Unavailable(reason, BUSY_SECONDS) from error
         raise AssertionError("unreachable")
 
     def reply(self, results: list[Result], nudge: str | None) -> None:

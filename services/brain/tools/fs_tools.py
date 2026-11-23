@@ -28,7 +28,11 @@ class Workspace:
         return target
 
     async def read_file(self, path: str, start_line: int = 1) -> str:
-        lines = self._inside(path).read_text().splitlines(keepends=True)
+        target = self._inside(path)
+        if not target.is_file():
+            names = sorted(str(file.relative_to(self.path)) for file in self.path.glob("src/**/*.js"))
+            raise FileNotFoundError(f"{path} does not exist. Source files: {', '.join(names)}")
+        lines = target.read_text().splitlines(keepends=True)
         return "".join(lines[max(0, start_line - 1) :])[:MAX_READ]
 
     async def write_file(self, path: str, content: str) -> dict:

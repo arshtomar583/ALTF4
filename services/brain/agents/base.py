@@ -23,7 +23,7 @@ def fast_model() -> str:
 
 
 def strong_model() -> str:
-    return os.getenv("MODEL_STRONG") or "gemini-3.8-flash"
+    return os.getenv("MODEL_STRONG") or "gemini-3.5-flash-lite"
 
 
 def clip(text: str, limit: int) -> str:

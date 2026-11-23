@@ -150,6 +150,22 @@ async def test_busy_model_is_skipped_by_the_next_agent(server, monkeypatch):
     assert ["test" in path for path, _ in sent] == [True, False, False]
 
 
+async def test_short_rate_limit_is_waited_out_when_every_other_model_is_used_up(server, monkeypatch):
+    turns, sent = server
+    waits = []
+
+    async def sleep(seconds):
+        waits.append(seconds)
+
+    monkeypatch.setattr(llm.asyncio, "sleep", sleep)
+    monkeypatch.setenv("MODEL_FALLBACKS", "gemini-second")
+    quota = fail(429, {"violations": [{"quotaId": "GenerateRequestsPerDayPerProject"}]})
+    turns += [fail(429, {"retryDelay": "30s"}), quota, say(("submit", DECISION))]
+    await run()
+    assert 25 < waits[-1] <= 30
+    assert ["second" in path for path, _ in sent] == [False, True, False]
+
+
 async def test_daily_quota_and_bad_requests_fail_at_once(server):
     turns, sent = server
     turns += [fail(429, {"violations": [{"quotaId": "GenerateRequestsPerDayPerProject"}]})]

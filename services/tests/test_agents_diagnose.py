@@ -104,7 +104,7 @@ def seen(urls=(URL,)):
 
 async def test_each_investigator_gets_only_its_own_tools(lab, ctx):
     code = {tool.name for tool in code_investigator.build_tools(lab, ctx)}
-    runtime = {tool.name for tool in runtime_investigator.build_tools(lab)}
+    runtime = {tool.name for tool in runtime_investigator.build_tools(lab, ctx)}
     assert code == {"git_log", "git_show", "git_diff", "git_bisect"}
     assert runtime == {"container_logs", "lab_logs", "config_diff", "web_search"}
 
@@ -115,6 +115,15 @@ async def test_config_diff_reports_a_removed_env_key_without_its_value(lab, revs
     express = next(c for c in result["changes"] if c["key"] == "dependencies.express")
     assert express["after"] == '"^4.0.0"'
     assert "abc123" not in json.dumps(result)
+
+
+async def test_config_diff_ignores_formatting(lab, folder, revs):
+    repo = folder / "shop"
+    package = repo / SHOP / "package.json"
+    before = revs["env_after"]
+    package.write_text(json.dumps(json.loads(package.read_text()), indent=4) + "\n\n")
+    after = commit(repo, "Reformat")
+    assert (await config_diff(lab, before, after))["config_changed"] is False
 
 
 async def test_config_diff_is_quiet_when_only_code_changed(lab, revs):
@@ -185,7 +194,7 @@ async def test_container_logs_fall_back_to_a_file_then_an_error(monkeypatch, tmp
 
 async def test_lab_logs_hold_the_replayed_error(lab, revs, folder):
     await lab.replay(revs["broken"], REQUEST)
-    tool = next(tool for tool in log_tools.log_tools(lab) if tool.name == "lab_logs")
+    tool = next(tool for tool in log_tools.log_tools(lab, "a", revs["broken"]) if tool.name == "lab_logs")
     assert ERROR in await tool.fn(rev=revs["broken"])
     assert (folder / "logs" / f"lab-{revs['broken'][:12]}.log").exists()
 
@@ -420,3 +429,54 @@ async def test_unrecorded_failure_status_is_measured(monkeypatch, lab, ctx):
     monkeypatch.setattr(pipeline, "get_lab", lambda repo, rev: lab)
     blank = ctx.model_copy(update={"failing_request": FailingRequest(body=REQUEST.body)})
     assert (await pipeline.observe(blank)).failing_request.status == 500
+
+
+async def test_slot_logs_inside_docker_come_from_the_replay(lab, revs, monkeypatch, tmp_path):
+    await lab.replay(revs["broken"], REQUEST)
+    monkeypatch.setenv("PATH", str(tmp_path))
+
+    async def resolve(rev):
+        return rev
+
+    monkeypatch.setattr(lab, "resolve", resolve)
+    tool = log_tools.log_tools(lab, "a", revs["broken"])[0]
+    broken = await tool.fn(slot="a")
+    assert ERROR in broken["logs"] and "lab replay" in broken["source"]
+    assert "error" in await tool.fn(slot="b")
+    seen = runtime_investigator.Seen()
+    seen.log(broken)
+    assert any(ERROR in line for line in seen.logs)
+
+
+async def test_invented_url_costs_a_reask_but_not_the_finding(monkeypatch, lab, ctx, revs, web):
+    item = {"title": "T", "url": URL, "content": "C"}
+    web.answer = lambda request: httpx.Response(200, json={"results": [item]})
+    invented = runtime_finding().model_dump()
+    invented["evidence"].append(
+        {"kind": "source", "ref": None, "excerpt": "x", "url": "https://made.up/page"}
+    )
+    prompts = script(monkeypatch, {"runtime": [
+        ("lab_logs", {"rev": revs["broken"]}),
+        ("web_search", {"query": ERROR}),
+        ("config_diff", {"a": revs["healthy"], "b": revs["broken"]}),
+        ("submit", invented),
+        ("submit", invented),
+    ]})
+    await lab.replay(revs["broken"], REQUEST)
+    ctx = ctx.model_copy(update={"incident_id": "inc-url"})
+    finding = await runtime_investigator.investigate(lab, ctx)
+    assert URL in prompts["runtime"][4]
+    assert [item.url for item in finding.evidence if item.url] == [URL]
+
+
+async def test_missing_finding_is_not_retried_after_the_decision(monkeypatch, lab, ctx):
+    from brain.agents import bridge
+
+    monkeypatch.setattr(pipeline, "get_lab", lambda repo, rev: lab)
+    ctx = ctx.model_copy(update={"incident_id": "inc-late"})
+
+    async def decided():
+        return {"decision": {}}
+
+    await bridge.step(ctx.incident_id, "decide", decided)
+    assert await pipeline.diagnose(ctx) == {"code": None, "runtime": None}

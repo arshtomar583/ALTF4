@@ -2,6 +2,7 @@
 
 import json
 from pathlib import PurePosixPath
+from typing import Any
 
 from ..agents.models import FailingRequest
 from ..lab import Lab
@@ -104,6 +105,15 @@ def _settings(path: str, text: str) -> dict[str, str]:
     return flat
 
 
+def _content(path: str, text: str) -> Any:
+    if path.endswith(".json"):
+        try:
+            return json.loads(text)
+        except ValueError:
+            return text
+    return [line.strip() for line in text.splitlines() if line.strip() and not line.strip().startswith("#")]
+
+
 async def config_diff(lab: Lab, a: str, b: str) -> dict:
     """Summarise config changes. Env values may be secrets, so only their keys appear."""
     a, b = await lab.resolve(a), await lab.resolve(b)
@@ -121,9 +131,9 @@ async def config_diff(lab: Lab, a: str, b: str) -> dict:
             if not secret:
                 change |= {"before": before.get(key), "after": after.get(key)}
             changes.append(change)
-    # Compare whole files too, so a change no setting captures still shows up.
+    # Compare whole files too, so a change no setting captures still shows up. Formatting is not a change.
     for path in sorted(before_files & after_files - {change["file"] for change in changes}):
-        if await _file(lab, a, path) != await _file(lab, b, path):
+        if _content(path, await _file(lab, a, path)) != _content(path, await _file(lab, b, path)):
             changes.append({"file": path, "key": None, "change": "edited"})
     return {
         "config_changed": bool(changes),

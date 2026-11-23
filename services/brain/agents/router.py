@@ -57,9 +57,10 @@ async def bad_candidate(lab: Lab, ctx: IncidentContext) -> Candidate:
         rationale=rationale,
         by="judge",
     )
-    return await repair.propose(
+    await repair.announce(
         candidate, ctx.incident_id, ACTOR, "The judge submits a flawed fix for verification"
     )
+    return candidate
 
 
 async def challenge(ctx: IncidentContext) -> tuple[Candidate, Verification]:

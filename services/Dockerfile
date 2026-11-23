@@ -18,5 +18,15 @@ COPY version_switch ./version_switch
 USER phoenix
 
 FROM runtime AS brain
+# The agents' lab runs ShopLite revisions, so it needs git and the shop's Node version.
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y git libstdc++6 \
+    && rm -rf /var/lib/apt/lists/* \
+    && install -d -o phoenix -g phoenix /revisions \
+    && git config --system --add safe.directory '*'
+COPY --from=node:24-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:24-bookworm-slim /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 COPY brain ./brain
 USER phoenix
