@@ -41,7 +41,7 @@ export function useControls(state: IncidentState, incidentOpen: boolean | null, 
     },
     judge: {
       enabled: connected && afterFix && !waiting && sending === null,
-      label: "Judge: submit a bad candidate",
+      label: "Submit a bad candidate",
       busy: waiting !== null,
       hint: recorded ? null : waiting ? "Judge's candidate queued → verifying…" : afterFix ? "Must be rejected" : "Available after a verified fix",
       problem: problems.judge ?? null,

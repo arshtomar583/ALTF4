@@ -10,7 +10,7 @@ function Mark({ ok, pending = false }: { ok: boolean | null; pending?: boolean }
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
       {ok ? <Check className="h-4 w-4 text-ok" /> : <Cross className="h-4 w-4 text-down" />}
-      <span className="text-meta">{ok ? "pass" : "fail"}</span>
+      <span>{ok ? "pass" : "fail"}</span>
     </span>
   );
 }
@@ -44,7 +44,7 @@ function Stamp({ candidate }: { candidate: Candidate }) {
       >
         <Icon className="h-5 w-5" /> {result.verdict}
       </p>
-      <p className="line-clamp-2 text-meta leading-snug text-text-2" title={result.reason}>
+      <p className="line-clamp-3 leading-snug text-text-2" title={result.reason}>
         <Name candidate={candidate} /> {result.reason}
       </p>
     </div>
@@ -57,12 +57,9 @@ const ROWS = [
   ["Diff review", "diff_review_ok"],
 ] as const;
 
-export const Verification = memo(function Verification({ candidates, active, spot, lit, dim, controls }: {
+export const Verification = memo(function Verification({ candidates, active, controls }: {
   candidates: Candidate[];
   active: boolean;
-  spot: string;
-  lit: boolean;
-  dim: boolean;
   controls: Controls;
 }) {
   // The newest candidates matter most, and four columns fit the projector.
@@ -75,13 +72,26 @@ export const Verification = memo(function Verification({ candidates, active, spo
   return (
     <Panel
       title={<span className="inline-flex items-center gap-2"><Dot actor="verifier" /> Independent verification</span>}
-      spot={spot}
-      lit={lit}
-      dim={dim}
+      aside={
+        <div className="flex min-w-0 items-center gap-4">
+          {approve.problem ? <p role="alert" className="line-clamp-2 max-w-80 text-meta leading-snug"><Warn /> {approve.problem}</p> : null}
+          <button
+            type="button"
+            onClick={approve.run}
+            disabled={!approve.enabled}
+            className={`control relative min-h-11 w-44 shrink-0 overflow-hidden rounded-control border font-semibold ${
+              approve.enabled ? "border-ok bg-ok text-bg" : "border-line text-text-3"
+            }`}
+          >
+            {approve.label}
+            {approve.busy ? <span aria-hidden className="progress absolute bottom-0 left-0 h-0.5 w-1/3 bg-ok" /> : null}
+          </button>
+        </div>
+      }
     >
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_24.5rem_8.5rem] gap-3 px-4 pt-1 pb-3">
+      <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 px-5 pt-3 pb-5">
         {shown.length === 0 ? (
-          <div className="-ml-4"><Skeleton text={active ? "Waiting for a candidate fix…" : "Tests every proposed fix"} /></div>
+          <div className="-ml-5"><Skeleton text={active ? "Waiting for a candidate fix…" : "Tests every proposed fix"} /></div>
         ) : (
           <div className="min-h-0 overflow-auto" role="region" aria-label="Verification results" tabIndex={0}>
             <table className="w-full text-left leading-tight">
@@ -96,7 +106,7 @@ export const Verification = memo(function Verification({ candidates, active, spo
               <tbody>
                 {ROWS.map(([name, key]) => (
                   <tr key={key} className="border-t border-line">
-                    <th className="py-1.5 pr-2 text-meta font-normal whitespace-nowrap">{name}</th>
+                    <th className="py-2.5 pr-2 font-normal whitespace-nowrap">{name}</th>
                     <td className="pr-2 align-middle">{key === "candidate" ? <Mark ok={first ? first.broken === "pass" : null} /> : <Mark ok={null} />}</td>
                     <td className="pr-2 align-middle">{key === "candidate" ? <Mark ok={first ? first.healthy === "pass" : null} /> : <Mark ok={null} />}</td>
                     {shown.map((item) => {
@@ -113,22 +123,8 @@ export const Verification = memo(function Verification({ candidates, active, spo
             </table>
           </div>
         )}
-        <div className="grid min-h-0 grid-cols-2 gap-4">
+        <div className="grid min-h-0 grid-cols-2 content-start gap-8">
           {stamps.map((item) => <Stamp key={item.id} candidate={item} />)}
-        </div>
-        <div className="flex min-h-0 flex-col justify-end gap-1.5">
-          {approve.problem ? <p role="alert" className="line-clamp-3 text-meta leading-snug text-text"><Warn /> {approve.problem}</p> : null}
-          <button
-            type="button"
-            onClick={approve.run}
-            disabled={!approve.enabled}
-            className={`control relative min-h-12 w-full px-1 text-meta 2xl:text-base overflow-hidden rounded-control border font-semibold ${
-              approve.enabled ? "border-ok bg-ok text-bg" : "border-line text-text-3"
-            }`}
-          >
-            {approve.label}
-            {approve.busy ? <span aria-hidden className="progress absolute bottom-0 left-0 h-0.5 w-1/3 bg-ok" /> : null}
-          </button>
         </div>
       </div>
     </Panel>

@@ -47,7 +47,7 @@ export function Markdown({ text }: { text: string }) {
       const [head, , ...rows] = take((item) => item.startsWith("|"));
       blocks.push(
         <div key={key} className="my-2 overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left text-meta">
             <thead className="text-text-3">
               <tr>{cells(head).map((cell, column) => <th key={column} className="pr-4 pb-1 font-medium">{inline(cell)}</th>)}</tr>
             </thead>

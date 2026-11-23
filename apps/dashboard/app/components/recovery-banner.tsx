@@ -23,7 +23,7 @@ export function RecoveryBanner({ recovered, slot, revision }: {
   }, [recovered]);
   if (!visible || !recovered) return null;
   return (
-    <p role="status" className="appear absolute inset-x-0 top-25.5 z-10 border-b border-line bg-panel-2 py-1.5 text-center">
+    <p role="status" className="appear absolute inset-x-0 top-24 z-10 border-b border-line bg-panel-2 py-1.5 text-center">
       <Warn /> Brain restarted · {recovered.step ? `resumed at ${recovered.step}` : "resumed from the start"} · live slot {slot?.toUpperCase() ?? "—"} @{" "}
       <span className="tnum">{revision?.slice(0, 7) ?? "—"}</span>
     </p>

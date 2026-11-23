@@ -18,21 +18,20 @@ function Status({ status, color }: { status: AgentStatus; color: string }) {
 }
 
 const Team = memo(function Team({ agents }: { agents: Roster }) {
+  const busy = AGENT_IDS.find((id) => agents[id] === "working");
   return (
-    <div className="mt-auto border-t border-line pt-1.5">
-      <h2 className="label">Agents</h2>
-      <ul>
+    <div className="mt-auto border-t border-line pt-3">
+      <h2 className="label mb-1.5">Agents</h2>
+      <ul className="grid gap-1">
         {AGENT_IDS.map((id) => (
-          <li key={id} className="grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-2.5 border-l-2 pl-2" style={{ borderColor: AGENTS[id].color }}>
-            <span className="grid place-items-center"><Status status={agents[id]} color={AGENTS[id].color} /></span>
-            <span className="truncate text-meta leading-tight font-semibold">{AGENTS[id].name}</span>
-            <span className="col-start-2 text-meta leading-tight text-text-2">
-              <span className="sr-only">{agents[id]}. </span>
-              {AGENTS[id].why}
-            </span>
+          <li key={id} title={AGENTS[id].why} className={`flex items-center gap-2.5 text-meta ${agents[id] === "working" ? "text-text" : "text-text-2"}`}>
+            <span className="grid w-4 shrink-0 place-items-center"><Status status={agents[id]} color={AGENTS[id].color} /></span>
+            <span className="truncate">{AGENTS[id].name}</span>
+            <span className="sr-only">: {agents[id]}. {AGENTS[id].why}</span>
           </li>
         ))}
       </ul>
+      <p aria-hidden className="mt-1.5 min-h-9 text-meta leading-snug text-text-2">{busy ? `Now: ${AGENTS[busy].why}` : ""}</p>
     </div>
   );
 });
@@ -44,14 +43,14 @@ function Problem({ text }: { text: string | null }) {
 export function Rail({ controls, agents, onHelp }: { controls: Controls; agents: Roster; onHelp: () => void }) {
   const { breakIt, judge } = controls;
   return (
-    <aside aria-label="Judge controls and agents" className="flex min-h-0 flex-col gap-1.5 overflow-y-auto rounded-panel border border-line bg-panel px-3 pt-3 pb-1">
+    <aside aria-label="Judge controls and agents" className="flex min-h-0 flex-col gap-2.5 overflow-y-auto rounded-panel border border-line bg-panel px-4 pt-4 pb-1">
       <div className="flex flex-col items-center gap-1.5">
         <button
           type="button"
           aria-label="Break checkout"
           disabled={!breakIt.enabled}
           onClick={breakIt.run}
-          className={`control grid h-28 w-28 shrink-0 place-content-center justify-items-center rounded-full border-2 text-title font-semibold ${
+          className={`control grid h-28 w-28 shrink-0 place-content-center justify-items-center rounded-full border-2 text-base font-semibold tracking-wide ${
             breakIt.enabled ? "border-down text-text" : "border-line text-text-3"
           }`}
         >

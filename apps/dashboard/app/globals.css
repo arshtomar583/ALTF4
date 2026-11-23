@@ -2,14 +2,14 @@
 
 :root {
   color-scheme: dark;
-  --bg: #07090c;
-  --panel: #0e1218;
-  --panel-2: #131923;
-  --line: #1e2633;
-  --text: #e8ecf2;
-  --text-2: #a3adbd;
-  /* #6b7586 measures 4.05:1 on --panel; this is the nearest step that clears 4.5:1. */
-  --text-3: #7a8496;
+  --bg: #09090b;
+  --panel: #0f0f12;
+  --panel-2: #18181b;
+  --line: #27272a;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  /* The lightest grey that still clears 4.5:1 on panels. */
+  --text-3: #85858f;
   --down: #f04444;
   --fixing: #f5a524;
   --ok: #22c55e;
@@ -39,8 +39,8 @@
   --text-meta: 0.8125rem;
   --text-title: 1.25rem;
   --text-state: 1.75rem;
-  --text-timer: 4rem;
-  --radius-panel: 0.625rem;
+  --text-timer: 3.25rem;
+  --radius-panel: 0.75rem;
   --radius-control: 0.5rem;
 }
 
@@ -144,14 +144,6 @@ button:not(:disabled) {
   .control:not(:disabled):hover {
     opacity: 0.85;
   }
-
-  .stage {
-    transition: opacity 300ms ease-out;
-  }
-
-  .stage[data-dim="true"]:not(:hover):not(:focus-within) {
-    opacity: 0.55;
-  }
 }
 
 @keyframes alarm {
@@ -204,5 +196,46 @@ button:not(:disabled) {
 
   to {
     transform: translateX(300%);
+  }
+}
+
+/* "Save as PDF" prints the open report and nothing else. */
+@media print {
+  html,
+  body {
+    background: white !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  dialog,
+  dialog > div,
+  dialog .report {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  dialog {
+    position: absolute !important;
+    inset: 0 !important;
+  }
+
+  dialog::backdrop {
+    display: none;
+  }
+
+  .report,
+  .report * {
+    visibility: visible;
+    background: white !important;
+    border-color: #d4d4d8 !important;
+    color: black !important;
   }
 }

@@ -41,7 +41,7 @@ function Metric({ label, value, note, none }: { label: string; value: string | n
   return (
     <div className="min-w-0">
       <dt className="label whitespace-nowrap">{label}</dt>
-      <dd className="flex h-[4.4rem] items-center gap-2.5 whitespace-nowrap">
+      <dd className="flex h-14 items-center gap-2.5 whitespace-nowrap">
         {value === null ? (
           <span className="text-text-3">{none}</span>
         ) : (
@@ -90,7 +90,7 @@ export const StatusStrip = memo(function StatusStrip(props: {
   const none = phase === "down" ? "Detecting…" : "No incident yet";
   const note = (done: boolean) => (!done ? null : closed ? "last incident" : "final");
   return (
-    <header className="relative grid h-25.5 shrink-0 grid-cols-[19.5rem_minmax(0,1fr)_9.5rem] items-center gap-x-6 px-5">
+    <header className="relative grid h-24 shrink-0 grid-cols-[19.5rem_minmax(0,1fr)_9.5rem] items-center gap-x-6 px-5">
       <div className="min-w-0">
         <div className="flex items-baseline gap-3">
           <h1 className="text-base font-semibold tracking-[0.18em]">PHOENIX</h1>

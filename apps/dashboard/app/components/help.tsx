@@ -3,12 +3,12 @@ import { Dialog } from "./report-drawer";
 const KEYS = [
   ["B", "Break checkout, after a confirmation"],
   ["A", "Approve the release, when a fix is verified"],
-  ["D", "Turn director mode on or off"],
+  ["D", "Follow the incident automatically, or stay on one stage"],
   ["R", "Open the report, when it is ready"],
   ["?", "Show these shortcuts"],
 ];
 
-export function Help({ director, onClose }: { director: boolean; onClose: () => void }) {
+export function Help({ following, onClose }: { following: boolean; onClose: () => void }) {
   return (
     <Dialog label="Keyboard shortcuts" onClose={onClose} className="m-auto w-[30rem] max-w-[92vw] rounded-panel border p-5">
       {(close) => (
@@ -23,7 +23,7 @@ export function Help({ director, onClose }: { director: boolean; onClose: () => 
             ))}
           </dl>
           <p className="text-meta text-text-2">
-            Director mode is {director ? "on" : "off"}. It lights the panel that heard from its agent last and dims the others.
+            Following is {following ? "on" : "off"}. The screen moves to the next stage as the incident reaches it.
           </p>
           <button type="button" onClick={close} className="control mt-4 min-h-11 w-full rounded-control border border-line">Close</button>
         </>
