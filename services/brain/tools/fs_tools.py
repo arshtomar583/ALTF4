@@ -46,7 +46,10 @@ class Workspace:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content)
         # Every write is tested, so the commit gate always reflects the final content.
-        return {"written": str(relative), "unit_tests": await self.run_unit_tests()}
+        tests = await self.run_unit_tests()
+        if tests["ok"]:
+            return {"written": str(relative), "unit_tests": "all pass", "next": "Call commit_candidate now."}
+        return {"written": str(relative), "unit_tests": tests}
 
     async def run_unit_tests(self) -> dict:
         self.tested = False

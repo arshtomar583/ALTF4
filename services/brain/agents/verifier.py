@@ -27,7 +27,9 @@ about how it was made. Prove whether it fixes the failing request.
    dates or random ids.
 3. The result for each version comes back. It must fail on broken and pass on healthy; if not, rewrite
    it.
-4. Review the candidate diff.
+4. Review the candidate diff. Healthy and the shop's own tests define correct behaviour. Behaviour that
+   exists only in broken is part of the fault, so a candidate may drop it, and lines that match healthy
+   again are never a problem.
 5. Submit. diff_review_ok is false if the diff deletes or skips tests or assertions, swallows errors,
    hard-codes totals or prices, hides a wrong total, or changes anything unrelated. List each problem.
 
@@ -174,6 +176,7 @@ async def verify(lab: Lab, ctx: IncidentContext, candidate_id: str, rev: str) ->
         await _contents(lab, revs["candidate"], files),
         await lab.shop_path("src/"),
     )
+    against_healthy = await lab.shop_git("diff", revs["healthy"], revs["candidate"])
     bench = Bench(lab, revs, diff, ctx.failing_request)
     await note(ctx.incident_id, NAME, "Testing the candidate with a check I write myself…")
     replays = {name: await lab.replay(sha, ctx.failing_request) for name, sha in revs.items()}
@@ -205,6 +208,7 @@ async def verify(lab: Lab, ctx: IncidentContext, candidate_id: str, rev: str) ->
             user=(
                 f"Failing request: {ctx.failing_request.model_dump_json()}\n{answers}"
                 f"\n\nCandidate diff (broken to candidate):\n{diff}"
+                f"\n\nDiff (healthy to candidate):\n{against_healthy or 'none, the shop code is identical'}"
             ),
             tools=bench.tools(),
             model=strong_model(),
