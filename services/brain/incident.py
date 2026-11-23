@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 import httpx
@@ -10,6 +11,7 @@ from pydantic import BaseModel
 from .event_store import EventStore, IncidentRecord
 
 Slot = Literal["a", "b"]
+IncidentHook = Callable[[IncidentRecord], Awaitable[None]]
 logger = logging.getLogger(__name__)
 STARTER_CART = {"sku": "demo-mug", "quantity": 1}
 
@@ -45,6 +47,16 @@ class IncidentEngine:
         self.switch = switch
         self.bad_revision = bad_revision
         self.operation = asyncio.Lock()
+        self.on_restored: list[IncidentHook] = []
+        self.on_released: list[IncidentHook] = []
+        self.hook_tasks: set[asyncio.Task] = set()
+
+    def notify(self, hooks: list[IncidentHook], incident: IncidentRecord) -> None:
+        """Run hooks in the background, so they never hold up recovery or a release."""
+        for hook in hooks:
+            task = asyncio.create_task(hook(incident))
+            self.hook_tasks.add(task)
+            task.add_done_callback(self.hook_tasks.discard)
 
     async def snapshot(self) -> SlotSnapshot:
         response = await self.switch.get("/slots")
@@ -151,6 +163,7 @@ class IncidentEngine:
             if incident is not None and incident.status == "open":
                 try:
                     await self.restore(incident)
+                    self.notify(self.on_restored, incident)
                 except (httpx.HTTPError, RecoveryError) as error:
                     logger.warning("Incident %s restore pending: %s", incident.id, error)
                     await asyncio.sleep(1)
