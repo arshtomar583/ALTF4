@@ -1,11 +1,61 @@
 @import "tailwindcss";
 
+@theme inline {
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-ground: #0a0c10;
+  --color-panel: #12161d;
+  --color-line: #1f252f;
+  --color-ink: #e8ecf3;
+  --color-dim: #98a2b3;
+  --color-bad: #ff5c5c;
+  --color-busy: #f5b13d;
+  --color-good: #3ecf8e;
+}
+
 :root {
   color-scheme: dark;
+  /* 16px on a 1280 projector, about 20px at 1920. */
+  font-size: clamp(16px, 0.6vw + 8.4px, 22px);
 }
 
 body {
-  background-color: #0c111a;
-  color: #e9edf5;
-  font-family: system-ui, sans-serif;
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stamp {
+    animation: stamp 180ms ease-out;
+  }
+
+  .waiting {
+    animation: waiting 1.6s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes waiting {
+  from {
+    opacity: 0.45;
+  }
 }
