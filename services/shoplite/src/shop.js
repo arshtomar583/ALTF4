@@ -21,11 +21,21 @@ export function createShop(revision) {
       return;
     }
 
+    const code = request.body?.discount?.code;
+    if (code !== undefined && code !== "SAVE10") {
+      response.status(400).json({ status: "rejected", message: "Unknown discount code" });
+      return;
+    }
+
+    const subtotalCents = product.unitPriceCents * quantity;
+    const discountCents = code === undefined ? 0 : Math.floor(subtotalCents / 10);
     response.json({
       status: "accepted",
       sku,
       quantity,
-      totalCents: product.unitPriceCents * quantity,
+      subtotalCents,
+      discountCents,
+      totalCents: subtotalCents - discountCents,
       revision,
     });
   });
