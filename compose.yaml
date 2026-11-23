@@ -25,9 +25,12 @@ services:
     environment:
       SHOP_A_URL: http://shop-a:3001
       SHOP_B_URL: http://shop-b:3001
+      PHOENIX_SWITCH_STATE_PATH: /data/switch-state.json
       PHOENIX_START_SLOT: "${PHOENIX_START_SLOT:-a}"
     ports:
       - "127.0.0.1:8080:8080"
+    volumes:
+      - switch-data:/data
     depends_on:
       shop-a:
         condition: service_healthy
@@ -74,3 +77,4 @@ services:
 
 volumes:
   incident-data:
+  switch-data:
