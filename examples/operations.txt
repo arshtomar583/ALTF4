@@ -1,2 +1,0 @@
-The sample inputs are ready for a team walkthrough.
-TODO: Confirm who will present the workflow.

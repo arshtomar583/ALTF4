@@ -13,7 +13,15 @@ __pycache__/
 build/
 dist/
 
-# Logs and OS files
+# Node.js and Next.js
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+coverage/
+
+# Local data, logs and OS files
+.data/
 *.log
 .DS_Store
 Thumbs.db
