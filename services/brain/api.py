@@ -13,7 +13,7 @@ from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from .event_store import EventStore
+from .event_store import EventStore, IncidentRecord
 from .probe import poll_checkout
 
 
@@ -46,6 +46,12 @@ app.add_middleware(
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/incidents/current")
+async def current_incident() -> IncidentRecord | None:
+    store: EventStore = app.state.store
+    return store.current_incident()
 
 
 @app.get("/events", response_class=StreamingResponse)
