@@ -68,7 +68,7 @@ export const Feed = memo(function Feed({ events }: { events: PhoenixEvent[] }) {
   const [open, setOpen] = useState(false);
   const latest = events.find((event) => event.type !== "agent.tool");
   return (
-    <section aria-label="Event feed" className="relative col-start-2 row-start-2 min-h-0 min-w-0 2xl:col-start-3 2xl:row-span-2 2xl:row-start-1">
+    <section aria-label="Event feed" className="relative min-h-11 min-w-0 xl:col-start-2 xl:row-start-2 xl:min-h-0 2xl:col-start-3 2xl:row-span-2 2xl:row-start-1">
       <div className="hidden h-full flex-col rounded-panel border border-line bg-panel 2xl:flex">
         <h2 className="shrink-0 px-4 pt-2 text-title font-semibold">Feed</h2>
         <div role="region" aria-label="All events" tabIndex={0} className="relative min-h-0 flex-1 overflow-y-auto px-4 pb-3">

@@ -103,7 +103,7 @@ export function WarRoom() {
   const closed = state.feed.find((event) => event.type === "incident.closed");
   const idle = phase === "healthy" && state.incidentId === null;
   return (
-    <div className="relative flex h-dvh min-h-[700px] min-w-[1180px] flex-col">
+    <div className="relative flex min-h-dvh flex-col xl:h-dvh xl:min-h-[700px]">
       {banner ? (
         <p className="shrink-0 bg-text py-1 text-center text-title leading-snug font-semibold text-bg">
           <Warn /> {banner}
@@ -134,15 +134,15 @@ export function WarRoom() {
         revision={state.revision}
         recorded={recorded}
       />
-      <main className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_2.75rem] gap-3 p-3 2xl:grid-cols-[16rem_minmax(0,1fr)_17rem]">
-        <div className="col-start-1 row-span-2 row-start-1 grid min-h-0">
+      <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 xl:grid-cols-[16rem_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_2.75rem] 2xl:grid-cols-[16rem_minmax(0,1fr)_17rem]">
+        <div className="grid min-h-0 xl:col-start-1 xl:row-span-2 xl:row-start-1">
           <Rail controls={controls} agents={state.agents} onHelp={showHelp} onBreak={showBreak} />
         </div>
-        <div className="col-start-2 row-start-1 min-h-0 min-w-0 2xl:row-span-2">
+        <div className="row-start-1 min-h-0 min-w-0 xl:col-start-2 2xl:row-span-2">
           {idle ? (
             <Empty beats={state.beats} slot={state.slot} revision={state.revision} last={closed?.summary ?? null} healthy={signal && lastOk} />
           ) : (
-            <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_1.25rem_6.75rem_0.75rem_10rem] 2xl:grid-rows-[minmax(0,1fr)_1.25rem_7rem_0.75rem_12.5rem]">
+            <div className="grid min-h-0 gap-y-3 xl:h-full xl:gap-y-0 xl:grid-rows-[minmax(0,1fr)_1.25rem_6.75rem_0.75rem_10rem] 2xl:grid-rows-[minmax(0,1fr)_1.25rem_7rem_0.75rem_12.5rem]">
               <Findings {...state.findings} active={working} over={state.decision !== null || state.escalation !== null} focus={focus} />
               <Thread joined={state.findings.code !== null && state.findings.runtime !== null} />
               <Decision
@@ -153,7 +153,7 @@ export function WarRoom() {
                 dim={focus !== null && focus !== "decision"}
                 onPack={showPack}
               />
-              <span />
+              <span className="hidden xl:block" />
               <Verification
                 spot={focus === "verification" ? (spot?.actor ?? "verifier") : "verifier"}
                 candidates={state.candidates}

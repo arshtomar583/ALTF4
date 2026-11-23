@@ -7,7 +7,7 @@ import { Check, Warn } from "./icons";
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 border-l border-line px-5 first:border-l-0">
+    <div className="min-w-0 border-line sm:border-l sm:px-5 sm:first:border-l-0">
       <dt className="label">{label}</dt>
       <dd className="mt-1 text-title leading-snug font-medium tabular-nums">{value}</dd>
     </div>
@@ -32,15 +32,15 @@ export const Empty = memo(function Empty({ beats, slot, revision, last, healthy 
   const recent = now === null ? [] : beats.filter((beat) => now - beat.at <= 60_000);
   const passed = recent.filter((beat) => beat.ok).length;
   return (
-    <div className="grid h-full place-content-center gap-8 rounded-panel border border-line bg-panel p-8 text-center">
-      <p className="text-5xl leading-tight font-semibold">
+    <div className="grid h-full place-content-center gap-4 rounded-panel border border-line bg-panel p-4 sm:gap-8 sm:p-8 text-center">
+      <p className="text-3xl leading-tight sm:text-5xl font-semibold">
         {healthy ? (
           <><Check className="h-10 w-10 text-ok" /> Checkout healthy</>
         ) : (
           <span className="text-text-2"><Warn className="h-10 w-10" /> No healthy checkout signal</span>
         )}
       </p>
-      <dl className="grid grid-cols-3">
+      <dl className="grid gap-y-3 sm:grid-cols-3">
         <Fact label="Probes passed, last 60s" value={recent.length === 0 ? "None received" : `${passed} of ${recent.length}`} />
         <Fact label="Live version" value={slot && revision ? `Slot ${slot.toUpperCase()} @ ${revision.slice(0, 7)}` : "Not known yet"} />
         <Fact label="Last incident" value={last ?? "None yet"} />

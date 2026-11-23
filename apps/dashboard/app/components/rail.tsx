@@ -19,9 +19,9 @@ function Status({ status, color }: { status: AgentStatus; color: string }) {
 
 const Team = memo(function Team({ agents }: { agents: Roster }) {
   return (
-    <div className="mt-auto border-t border-line pt-1.5">
+    <div className="border-t border-line pt-1.5 sm:col-span-2 xl:mt-auto">
       <h2 className="label">Agents</h2>
-      <ul>
+      <ul className="grid gap-y-1 sm:grid-cols-2 xl:block">
         {AGENT_IDS.map((id) => (
           <li key={id} className="grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-2.5 border-l-2 pl-2" style={{ borderColor: AGENTS[id].color }}>
             <span className="grid place-items-center"><Status status={agents[id]} color={AGENTS[id].color} /></span>
@@ -44,7 +44,7 @@ function Problem({ text }: { text: string | null }) {
 export function Rail({ controls, agents, onHelp, onBreak }: { controls: Controls; agents: Roster; onHelp: () => void; onBreak: () => void }) {
   const { breakIt, judge } = controls;
   return (
-    <aside aria-label="Judge controls and agents" className="flex min-h-0 flex-col gap-1.5 overflow-y-auto rounded-panel border border-line bg-panel px-3 pt-3 pb-1">
+    <aside aria-label="Judge controls and agents" className="grid min-h-0 gap-3 sm:grid-cols-2 xl:flex xl:flex-col xl:gap-1.5 xl:overflow-y-auto rounded-panel border border-line bg-panel px-3 pt-3 pb-1">
       <div className="flex flex-col items-center gap-1.5">
         <button
           type="button"

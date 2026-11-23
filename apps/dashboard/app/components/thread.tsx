@@ -14,7 +14,7 @@ export const Thread = memo(function Thread({ joined }: { joined: boolean }) {
   }, []);
   const middle = width / 2;
   return (
-    <div ref={box} aria-hidden className="h-5">
+    <div ref={box} aria-hidden className="hidden h-5 xl:block">
       {joined && width > 0 ? (
         <svg viewBox={`0 0 ${width} 20`} className="h-full w-full overflow-visible">
           {[width / 4, (width * 3) / 4].map((x) => (
