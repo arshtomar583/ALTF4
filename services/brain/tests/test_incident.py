@@ -39,6 +39,7 @@ class RecoveryTests(unittest.IsolatedAsyncioTestCase):
         self.revisions = {"a": "broken", "b": "stale"}
         self.changes = []
         self.idle_passes = True
+        self.charge = 1200
         self.switched_passes = True
 
     def response(self, request):
@@ -65,7 +66,7 @@ class RecoveryTests(unittest.IsolatedAsyncioTestCase):
         return httpx.Response(
             200 if passed else 500,
             headers={"X-Phoenix-Slot": slot, "X-Shop-Revision": self.revisions[slot]},
-            json={"status": "accepted" if passed else "failed"},
+            json={"status": "accepted" if passed else "failed", "totalCents": self.charge},
         )
 
     async def restore(self):
@@ -86,6 +87,13 @@ class RecoveryTests(unittest.IsolatedAsyncioTestCase):
             await self.restore()
         self.assertEqual(self.active, "a")
         self.assertEqual(self.changes, ["deploy b", "switch b", "switch a"])
+        self.assertEqual(self.store.current_incident().status, "open")
+
+    async def test_wrong_charge_on_healthy_slot_blocks_recovery(self):
+        self.charge = 1
+        with self.assertRaisesRegex(RecoveryError, "failed checkout verification"):
+            await self.restore()
+        self.assertEqual(self.active, "a")
         self.assertEqual(self.store.current_incident().status, "open")
 
     async def test_already_restored_traffic_is_verified_without_switching_again(self):

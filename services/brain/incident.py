@@ -8,12 +8,13 @@ from typing import Any, Literal
 import httpx
 from pydantic import BaseModel
 
+from .checkout import PLAIN_CART, check_charge
 from .event_store import EventStore, IncidentRecord
 
 Slot = Literal["a", "b"]
 IncidentHook = Callable[[IncidentRecord], Awaitable[None]]
 logger = logging.getLogger(__name__)
-STARTER_CART = {"sku": "demo-mug", "quantity": 1}
+STARTER_CART = PLAIN_CART
 
 
 class RecoveryError(RuntimeError):
@@ -88,11 +89,8 @@ class IncidentEngine:
             and response.headers.get("x-shop-revision") == revision
         ):
             return False
-        try:
-            checkout = response.json()
-        except ValueError:
-            return False
-        return isinstance(checkout, dict) and checkout.get("status") == "accepted"
+        ok, _ = check_charge(response, cart)
+        return ok
 
     async def break_checkout(self) -> None:
         if not self.bad_revision:

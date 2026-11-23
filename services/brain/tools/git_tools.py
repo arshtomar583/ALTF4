@@ -23,6 +23,8 @@ def _schema(properties: dict, required: list[str]) -> dict:
 def _reproduces(result: dict, request: FailingRequest) -> bool:
     if result["status"] == 0:
         return request.status in GATEWAY_ERRORS
+    if request.status is not None and 200 <= request.status < 300 and result.get("checkout_ok") is not None:
+        return 200 <= result["status"] < 300 and not result["checkout_ok"]
     return result["status"] == request.status
 
 

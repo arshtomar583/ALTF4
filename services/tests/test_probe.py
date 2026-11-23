@@ -6,6 +6,7 @@ import pytest
 
 from brain import probe
 from brain.event_store import EventStore
+from brain.incident import ProbeFailures
 
 pytestmark = pytest.mark.asyncio
 PLAIN = {"sku": "demo-mug", "quantity": 1}
@@ -36,7 +37,7 @@ async def record(monkeypatch, tmp_path, answer, count):
 
 async def test_probe_alternates_carts_and_records_what_it_sent(monkeypatch, tmp_path):
     def answer(body):
-        return httpx.Response(200, json={"totalCents": 1080 if "discount" in body else 1200})
+        return httpx.Response(200, json={"status": "accepted", "totalCents": 1080 if "discount" in body else 1200})
 
     sent, probes = await record(monkeypatch, tmp_path, answer, 4)
     assert sent[:4] == [PLAIN, SAVE10, PLAIN, SAVE10]
@@ -48,14 +49,30 @@ async def test_probe_alternates_carts_and_records_what_it_sent(monkeypatch, tmp_
 
 async def test_failed_probe_records_the_total_it_should_have_charged(monkeypatch, tmp_path):
     def answer(body):
-        return httpx.Response(200, json={"totalCents": 1}) if "discount" in body else httpx.Response(500)
+        return httpx.Response(200, json={"status": "accepted", "totalCents": 1}) if "discount" in body else httpx.Response(500)
 
     _, probes = await record(monkeypatch, tmp_path, answer, 2)
-    assert [item["ok"] for item in probes] == [False, True]
+    assert [item["ok"] for item in probes] == [False, False]
     # A wrong charge is recorded as charged, never replaced by the expected total.
     assert [item["cart_total_cents"] for item in probes] == [1200, 1]
 
 
-@pytest.mark.parametrize("reply", [httpx.Response(200, text="oops"), httpx.Response(200, json=[]), None])
-async def test_unreadable_answers_do_not_stop_the_probe(reply):
-    assert probe.charged_cents(reply, 1200) == 1200
+@pytest.mark.parametrize("amount", [0, 1200, 1201])
+async def test_three_wrong_discounts_trigger_despite_healthy_plain_carts(monkeypatch, tmp_path, amount):
+    def answer(cart):
+        return httpx.Response(200, json={"status": "accepted", "totalCents": amount if "discount" in cart else 1200})
+
+    _, probes = await record(monkeypatch, tmp_path, answer, 6)
+    streak = ProbeFailures()
+    assert [streak.observe(item) for item in probes] == [False] * 5 + [True]
+    assert probes[-1]["cart_total_cents"] == amount
+
+
+@pytest.mark.parametrize("reply", [
+    httpx.Response(200, text="oops"), httpx.Response(200, json=[]), None,
+    *[httpx.Response(200, json={"status": "accepted", "totalCents": value})
+      for value in (None, "1200", 1200.0, True)],
+    httpx.Response(200, json={"status": "rejected", "totalCents": 1200}),
+])
+async def test_invalid_answers_fail_the_probe(reply):
+    assert not probe.check_charge(reply, PLAIN)[0]

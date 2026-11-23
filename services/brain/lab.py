@@ -17,6 +17,7 @@ from pathlib import Path
 import httpx
 
 from .agents.models import FailingRequest
+from .checkout import check_charge
 
 PORT = 3003
 URL = f"http://127.0.0.1:{PORT}"
@@ -253,6 +254,7 @@ class Lab:
                 await self._stop_and_reap()
         return {
             "status": response.status_code,
+            "checkout_ok": check_charge(response, request.body)[0] if isinstance(request.body, dict) and request.path == "/checkout" else None,
             "body_excerpt": response.text[:500],
             "headers": dict(response.headers),
         }
