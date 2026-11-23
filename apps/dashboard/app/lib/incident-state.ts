@@ -23,7 +23,7 @@ export type AgentId = (typeof AGENT_IDS)[number];
 export type AgentStatus = "idle" | "working" | "done" | "failed";
 export type Roster = Record<AgentId, AgentStatus>;
 
-export type Beat = Probe & { id: number; outage: boolean };
+export type Beat = Probe & { id: number; at: number; outage: boolean };
 export type Marker = { id: number; label: string };
 export type FeedItem = PhoenixEvent;
 
@@ -185,7 +185,7 @@ function probe(state: IncidentState, id: number, at: number, data: Probe): Incid
   const counting = state.breakId !== null && state.restoredAt === null;
   const down = !data.ok && counting;
   const phase = down && state.phase === "healthy" ? "down" : state.phase;
-  const beats = [...state.beats, { ...data, id, outage: phase === "down" }].slice(-BEATS);
+  const beats = [...state.beats, { ...data, id, at, outage: phase === "down" }].slice(-BEATS);
   return {
     ...state,
     phase,

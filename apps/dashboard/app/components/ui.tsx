@@ -5,11 +5,11 @@ import type { AgentId } from "../lib/incident-state";
 type AgentView = { name: string; color: string; why: string };
 
 export const AGENTS: Record<AgentId, AgentView> = {
-  coordinator: { name: "Coordinator", color: "var(--agent-coordinator)", why: "no tools" },
-  code_investigator: { name: "Code Investigator", color: "var(--agent-code)", why: "history, no logs" },
-  runtime_investigator: { name: "Runtime Investigator", color: "var(--agent-runtime)", why: "logs, no history" },
-  repair: { name: "Repair Agent", color: "var(--agent-repair)", why: "cannot judge itself" },
-  verifier: { name: "Verifier", color: "var(--agent-verifier)", why: "never sees why" },
+  coordinator: { name: "Coordinator", color: "var(--agent-coordinator)", why: "Weighs both findings, picks the fix" },
+  code_investigator: { name: "Code Investigator", color: "var(--agent-code)", why: "Finds the breaking commit" },
+  runtime_investigator: { name: "Runtime Investigator", color: "var(--agent-runtime)", why: "Reads logs, explains the error" },
+  repair: { name: "Repair Agent", color: "var(--agent-repair)", why: "Writes the fix" },
+  verifier: { name: "Verifier", color: "var(--agent-verifier)", why: "Independently proves the fix" },
 };
 
 export function agent(actor: string): { name: string; color: string } {

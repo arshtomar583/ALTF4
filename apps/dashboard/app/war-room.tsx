@@ -29,6 +29,8 @@ const SAID: Partial<Record<Phase, string>> = {
   escalated: "Escalated to a human",
 };
 
+const SIGNAL_MS = 6000;
+
 type Spot = { panel: string; actor: string } | null;
 
 /** The story panel that the newest event belongs to. */
@@ -46,6 +48,18 @@ function spotlight(feed: PhoenixEvent[]): Spot {
 
 type Open = "report" | "pack" | "help" | "break" | null;
 
+/** Whether what the screen shows is fresh: connected, with a probe in the last six seconds. */
+function useSignal(probedAt: number | null, connection: string, recorded: boolean): boolean {
+  const [fresh, setFresh] = useState(false);
+  useEffect(() => {
+    const check = () => setFresh(probedAt !== null && Date.now() - probedAt <= SIGNAL_MS);
+    check();
+    const timer = window.setInterval(check, 500);
+    return () => window.clearInterval(timer);
+  }, [probedAt]);
+  return recorded ? probedAt !== null : connection === "Live" && fresh;
+}
+
 export function WarRoom() {
   const { state, connection, incidentOpen, banner, recorded } = useIncident();
   const controls = useControls(state, incidentOpen, recorded, connection === "Live");
@@ -57,6 +71,8 @@ export function WarRoom() {
   const showHelp = useCallback(() => setOpen("help"), []);
 
   const { phase } = state;
+  const signal = useSignal(state.probedAt, connection, recorded);
+  const lastOk = state.beats.at(-1)?.ok ?? false;
   const working = phase === "fixing";
   const staged = director && !state.closed && ["fixing", "verified", "releasing"].includes(phase);
   const spot = useMemo(() => (staged ? spotlight(state.feed) : null), [staged, state.feed]);
@@ -92,7 +108,7 @@ export function WarRoom() {
           <Warn /> {banner}
         </p>
       ) : null}
-      <p aria-live="polite" aria-atomic="true" className="sr-only">{SAID[phase] ?? ""}</p>
+      <p aria-live="polite" aria-atomic="true" className="sr-only">{signal ? (SAID[phase] ?? "") : "No signal"}</p>
       <div className="relative shrink-0">
         <StatusStrip
           phase={phase}
@@ -102,9 +118,10 @@ export function WarRoom() {
           verifiedAt={state.verifiedAt}
           failed={state.failedCheckouts}
           connection={connection}
+          signal={signal}
+          lastOk={lastOk}
           canReport={state.report !== null}
           onReport={showReport}
-          onHelp={showHelp}
         />
         <RecoveryBanner recovered={state.recovered} slot={state.slot} revision={state.revision} />
       </div>
@@ -116,13 +133,13 @@ export function WarRoom() {
         revision={state.revision}
         recorded={recorded}
       />
-      <main className="grid min-h-0 flex-1 grid-cols-[13rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_2.75rem] gap-3 p-3 2xl:grid-cols-[13rem_minmax(0,1fr)_17rem]">
+      <main className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_2.75rem] gap-3 p-3 2xl:grid-cols-[16rem_minmax(0,1fr)_17rem]">
         <div className="col-start-1 row-span-2 row-start-1 grid min-h-0">
-          <Rail controls={controls} agents={state.agents} />
+          <Rail controls={controls} agents={state.agents} onHelp={showHelp} />
         </div>
         <div className="col-start-2 row-start-1 min-h-0 min-w-0 2xl:row-span-2">
           {idle ? (
-            <Empty waiting={state.beats.length === 0} last={closed?.summary ?? null} />
+            <Empty beats={state.beats} slot={state.slot} revision={state.revision} last={closed?.summary ?? null} healthy={signal && lastOk} />
           ) : (
             <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_1.25rem_6.75rem_0.75rem_10rem] 2xl:grid-rows-[minmax(0,1fr)_1.25rem_7rem_0.75rem_12.5rem]">
               <Findings {...state.findings} active={working} over={state.decision !== null || state.escalation !== null} focus={focus} />

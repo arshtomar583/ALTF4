@@ -79,7 +79,7 @@ export const Verification = memo(function Verification({ candidates, active, spo
       lit={lit}
       dim={dim}
     >
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_24.5rem_9.5rem] gap-4 px-4 pt-1 pb-3">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_24.5rem_8.5rem] gap-3 px-4 pt-1 pb-3">
         {shown.length === 0 ? (
           <div className="-ml-4"><Skeleton text={active ? "Waiting for a candidate fix…" : "Tests every proposed fix"} /></div>
         ) : (
@@ -122,7 +122,7 @@ export const Verification = memo(function Verification({ candidates, active, spo
             type="button"
             onClick={approve.run}
             disabled={!approve.enabled}
-            className={`control relative min-h-12 w-full overflow-hidden rounded-control border font-semibold ${
+            className={`control relative min-h-12 w-full px-1 text-meta 2xl:text-base overflow-hidden rounded-control border font-semibold ${
               approve.enabled ? "border-ok bg-ok text-bg" : "border-line text-text-3"
             }`}
           >
