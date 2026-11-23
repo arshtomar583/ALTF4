@@ -1,0 +1,2 @@
+The demo runs from the command line.
+TODO: Walk through the demo from a fresh clone.
