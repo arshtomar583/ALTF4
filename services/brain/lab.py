@@ -248,6 +248,11 @@ class Lab:
                     response = await client.request(
                         request.method, handle.url + request.path, json=request.body
                     )
+                    if response.is_server_error:
+                        # Express can defer its error logger until after sending the response.
+                        # Let Node handle another request before terminating the replay server.
+                        with suppress(httpx.RequestError):
+                            await client.get(handle.url + "/health", timeout=1)
             except (LabError, httpx.RequestError) as error:
                 return {"status": 0, "body_excerpt": f"{type(error).__name__}: {error}", "headers": {}}
             finally:
