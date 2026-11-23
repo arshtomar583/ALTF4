@@ -21,7 +21,7 @@ export function createShop(revision) {
       return;
     }
 
-    const code = request.body?.discount?.code;
+    const code = request.body.discount.code.trim().toUpperCase();
     if (code !== undefined && code !== "SAVE10") {
       response.status(400).json({ status: "rejected", message: "Unknown discount code" });
       return;
