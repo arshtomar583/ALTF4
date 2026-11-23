@@ -13,15 +13,20 @@ import httpx
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from .event_store import EventStore, IncidentRecord
+from .event_store import ApprovalRejected, EventStore, IncidentRecord
 from .incident import IncidentEngine, RecoveryError
 from .probe import poll_checkout
+from .release import ReleaseRunner
 
 
 class BreakRequest(BaseModel):
     fault: Literal["bad_commit"]
+
+
+class ApprovalRequest(BaseModel):
+    candidate_id: Annotated[str, Field(min_length=1, max_length=128)]
 
 
 @asynccontextmanager
@@ -41,6 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             engine = IncidentEngine(store, client, os.getenv("PHOENIX_BAD_REV"))
             app.state.engine = engine
             workers.append(asyncio.create_task(engine.watch(store.latest_id())))
+            workers.append(asyncio.create_task(ReleaseRunner(engine).watch()))
         try:
             yield
         finally:
@@ -69,6 +75,20 @@ async def health() -> dict[str, str]:
 async def current_incident() -> IncidentRecord | None:
     store: EventStore = app.state.store
     return store.current_incident()
+
+
+@app.post("/incidents/{incident_id}/approve", status_code=202)
+async def approve_candidate(incident_id: str, request: ApprovalRequest) -> dict[str, str]:
+    if app.state.engine is None:
+        raise HTTPException(status_code=503, detail="The Git version switch is not configured")
+    store: EventStore = app.state.store
+    try:
+        release = store.approve_candidate(incident_id, request.candidate_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ApprovalRejected as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"status": "releasing", "candidate_id": release.candidate_id, "rev": release.revision}
 
 
 @app.post("/chaos/break")

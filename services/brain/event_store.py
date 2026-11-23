@@ -1,6 +1,7 @@
 """Persist probe events for the dashboard and coordinator."""
 
 import json
+import re
 import sqlite3
 from collections.abc import Iterator
 from contextlib import closing, contextmanager
@@ -32,6 +33,19 @@ class IncidentRecord(BaseModel):
     healthy_rev: str
     failing_request: dict[str, Any]
     closed_at: str | None
+
+
+class ApprovalRejected(ValueError):
+    pass
+
+
+class ReleaseRecord(BaseModel):
+    id: int
+    incident_id: str
+    candidate_id: str
+    revision: str
+    previous_slot: Literal["a", "b"] | None = None
+    rollback_reason: str | None = None
 
 
 def checkout_summary(ok: bool) -> str:
@@ -93,6 +107,17 @@ class EventStore:
                     step TEXT NOT NULL,
                     completed_at TEXT NOT NULL,
                     payload TEXT NOT NULL DEFAULT '{}'
+                )"""
+            )
+            db.execute(
+                """CREATE TABLE IF NOT EXISTS releases (
+                    id INTEGER PRIMARY KEY REFERENCES events(id),
+                    incident_id TEXT NOT NULL REFERENCES incidents(id),
+                    candidate_id TEXT NOT NULL,
+                    revision TEXT NOT NULL,
+                    previous_slot TEXT CHECK (previous_slot IN ('a', 'b')),
+                    rollback_reason TEXT,
+                    finished_at TEXT
                 )"""
             )
 
@@ -233,4 +258,133 @@ class EventStore:
                 incident_id=incident.id,
                 actor="coordinator",
                 summary=f"Restored checkout on slot {active_slot.upper()}",
+            )
+
+    def approve_candidate(self, incident_id: str, candidate_id: str) -> ReleaseRecord:
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            incident = db.execute(
+                "SELECT status, healthy_rev, broken_rev FROM incidents WHERE id = ? AND closed_at IS NULL",
+                (incident_id,),
+            ).fetchone()
+            if incident is None:
+                raise LookupError("Incident not found")
+            if incident["status"] != "restored":
+                raise ApprovalRejected("Only a restored incident can accept an approval")
+
+            revision = self._verified_revision(db, incident_id, candidate_id)
+            if revision in {incident["healthy_rev"], incident["broken_rev"]}:
+                raise ApprovalRejected("The candidate must be a new fix revision")
+            approval_id = self._insert_event(
+                db,
+                "approval.granted",
+                {"candidate_id": candidate_id, "rev": revision},
+                incident_id=incident_id,
+                actor="release",
+                summary=f"Approved candidate {candidate_id}",
+            )
+            db.execute(
+                "INSERT INTO releases (id, incident_id, candidate_id, revision) VALUES (?, ?, ?, ?)",
+                (approval_id, incident_id, candidate_id, revision),
+            )
+            db.execute("UPDATE incidents SET status = 'releasing' WHERE id = ?", (incident_id,))
+        return ReleaseRecord(id=approval_id, incident_id=incident_id, candidate_id=candidate_id, revision=revision)
+
+    @staticmethod
+    def _verified_revision(db: sqlite3.Connection, incident_id: str, candidate_id: str) -> str:
+        proposals = db.execute(
+            """SELECT id, payload FROM events
+            WHERE incident_id = ? AND type = 'candidate.proposed' AND json_extract(payload, '$.candidate_id') = ?
+            ORDER BY id DESC""",
+            (incident_id, candidate_id),
+        ).fetchall()
+        if not proposals:
+            raise ApprovalRejected("No candidate was proposed for this incident")
+        revisions = [json.loads(proposal["payload"]).get("rev") for proposal in proposals]
+        revision = revisions[0]
+        if not isinstance(revision, str) or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+            raise ApprovalRejected("Candidate proposals must identify a full Git commit SHA")
+        if any(other != revision for other in revisions):
+            raise ApprovalRejected("The candidate ID was reused for a different revision")
+
+        verification = db.execute(
+            """SELECT payload FROM events
+            WHERE incident_id = ? AND type = 'verification.done' AND actor = 'verifier'
+                AND json_extract(payload, '$.candidate_id') = ? AND id > ?
+            ORDER BY id DESC LIMIT 1""",
+            (incident_id, candidate_id, proposals[0]["id"]),
+        ).fetchone()
+        if verification is None:
+            raise ApprovalRejected("The candidate requires verification after its latest proposal")
+        result = json.loads(verification["payload"])
+        if result.get("verdict") != "VERIFIED" or result.get("rev", revision) != revision:
+            raise ApprovalRejected("The independent verifier did not approve this candidate revision")
+        return revision
+
+    def pending_release(self, incident_id: str) -> ReleaseRecord | None:
+        with self._connect() as db:
+            row = db.execute(
+                """SELECT id, incident_id, candidate_id, revision, previous_slot, rollback_reason
+                FROM releases WHERE incident_id = ? AND finished_at IS NULL ORDER BY id DESC LIMIT 1""",
+                (incident_id,),
+            ).fetchone()
+        return None if row is None else ReleaseRecord.model_validate(dict(row))
+
+    def plan_release(self, release_id: int, previous_slot: Literal["a", "b"]) -> bool:
+        with self._connect() as db:
+            changed = db.execute(
+                "UPDATE releases SET previous_slot = ? WHERE id = ? AND previous_slot IS NULL AND finished_at IS NULL",
+                (previous_slot, release_id),
+            )
+            return changed.rowcount == 1
+
+    def require_release_rollback(self, release_id: int, reason: str) -> None:
+        with self._connect() as db:
+            db.execute(
+                "UPDATE releases SET rollback_reason = ? WHERE id = ? AND finished_at IS NULL",
+                (reason, release_id),
+            )
+
+    def finish_release(
+        self,
+        incident: IncidentRecord,
+        release: ReleaseRecord,
+        *,
+        active_slot: Literal["a", "b"],
+        active_rev: str,
+        failure: str | None = None,
+    ) -> None:
+        now = datetime.now(timezone.utc)
+        ok = failure is None
+        data = {
+            "candidate_id": release.candidate_id,
+            "ok": ok,
+            "active_slot": active_slot,
+            "active_rev": active_rev,
+            "seconds_to_verified_fix": round((now - datetime.fromisoformat(incident.opened_at)).total_seconds(), 3)
+            if ok else None,
+            "reason": failure,
+        }
+        with self._connect() as db:
+            changed = db.execute(
+                "UPDATE releases SET finished_at = ? WHERE id = ? AND finished_at IS NULL",
+                (now.isoformat(), release.id),
+            )
+            if not changed.rowcount:
+                return
+            db.execute(
+                "UPDATE incidents SET status = ? WHERE id = ? AND status = 'releasing'",
+                ("released" if ok else "restored", incident.id),
+            )
+            db.execute(
+                "INSERT INTO steps (incident_id, step, completed_at, payload) VALUES (?, ?, ?, ?)",
+                (incident.id, "release", now.isoformat(), json.dumps(data)),
+            )
+            self._insert_event(
+                db,
+                "release.done",
+                data,
+                incident_id=incident.id,
+                actor="release",
+                summary="Verified checkout fix released" if ok else "Candidate release stopped",
             )

@@ -64,6 +64,10 @@ class IncidentEngine:
         )
         response.raise_for_status()
 
+    async def promote(self, slot: Slot, revision: str) -> None:
+        response = await self.switch.put(f"/slots/{slot}/healthy", json={"revision": revision})
+        response.raise_for_status()
+
     async def checkout_passes(self, path: str, expected_slot: Slot, revision: str, cart: dict[str, Any]) -> bool:
         response = await self.switch.post(path, json=cart)
         if not (
