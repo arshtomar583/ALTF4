@@ -193,7 +193,9 @@ async def test_container_logs_fall_back_to_a_file_then_an_error(monkeypatch, tmp
 
 
 async def test_lab_logs_hold_the_replayed_error(lab, revs, folder):
-    await lab.replay(revs["broken"], REQUEST)
+    lab.log_path(revs["broken"]).unlink(missing_ok=True)
+    result = await lab.replay(revs["broken"], REQUEST)
+    assert result["status"] == 500, result["body_excerpt"]
     tool = next(tool for tool in log_tools.log_tools(lab, "a", revs["broken"]) if tool.name == "lab_logs")
     assert ERROR in await tool.fn(rev=revs["broken"])
     assert (folder / "logs" / f"lab-{revs['broken'][:12]}.log").exists()

@@ -109,7 +109,7 @@ export const Findings = memo(function Findings({ code, runtime, active, over, fo
   focus: string | null;
 }) {
   return (
-    <div className="grid min-h-0 grid-cols-2 gap-3">
+    <div className="grid min-h-0 gap-3 md:grid-cols-2">
       <FindingCard letter="A" actor="code_investigator" finding={code} active={active} over={over} lit={focus === "code"} dim={focus !== null && focus !== "code"} />
       <FindingCard letter="B" actor="runtime_investigator" finding={runtime} active={active} over={over} lit={focus === "runtime"} dim={focus !== null && focus !== "runtime"} />
     </div>

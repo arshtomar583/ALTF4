@@ -32,7 +32,7 @@ export function Help({ director, onClose }: { director: boolean; onClose: () => 
   );
 }
 
-export function ConfirmBreak({ onConfirm, onClose }: { onConfirm: () => void; onClose: () => void }) {
+export function ConfirmBreak({ enabled, onConfirm, onClose }: { enabled: boolean; onConfirm: () => void; onClose: () => void }) {
   return (
     <Dialog label="Break checkout?" onClose={onClose} className="m-auto w-[26rem] max-w-[92vw] rounded-panel border p-5">
       {(close) => (
@@ -43,6 +43,7 @@ export function ConfirmBreak({ onConfirm, onClose }: { onConfirm: () => void; on
             <button type="button" onClick={close} className="control min-h-11 rounded-control border border-line">Cancel</button>
             <button
               type="button"
+              disabled={!enabled}
               onClick={() => {
                 onConfirm();
                 close();

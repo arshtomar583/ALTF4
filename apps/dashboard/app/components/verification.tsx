@@ -79,11 +79,11 @@ export const Verification = memo(function Verification({ candidates, active, spo
       lit={lit}
       dim={dim}
     >
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_24.5rem_8.5rem] gap-3 px-4 pt-1 pb-3">
+      <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_24.5rem_8.5rem] gap-3 px-4 pt-1 pb-3">
         {shown.length === 0 ? (
           <div className="-ml-4"><Skeleton text={active ? "Waiting for a candidate fix…" : "Tests every proposed fix"} /></div>
         ) : (
-          <div className="min-h-0 overflow-auto" role="region" aria-label="Verification results" tabIndex={0}>
+          <div className="min-h-0 min-w-0 overflow-auto" role="region" aria-label="Verification results" tabIndex={0}>
             <table className="w-full text-left leading-tight">
               <thead>
                 <tr>
@@ -113,7 +113,7 @@ export const Verification = memo(function Verification({ candidates, active, spo
             </table>
           </div>
         )}
-        <div className="grid min-h-0 grid-cols-2 gap-4">
+        <div className="grid min-h-0 gap-4 sm:grid-cols-2">
           {stamps.map((item) => <Stamp key={item.id} candidate={item} />)}
         </div>
         <div className="flex min-h-0 flex-col justify-end gap-1.5">

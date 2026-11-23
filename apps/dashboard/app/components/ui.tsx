@@ -43,8 +43,8 @@ export function Panel({ title, aside, children, spot, lit = false, dim = false, 
         data-on={lit}
         style={{ background: spot ? agent(spot).color : undefined }}
       />
-      <div className="flex shrink-0 items-center gap-3 px-4 pt-2">
-        <h2 className="min-w-0 flex-1 truncate text-base font-semibold 2xl:text-title">{title}</h2>
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-2 xl:flex-nowrap">
+        <h2 className="min-w-0 grow text-base xl:flex-1 xl:truncate font-semibold 2xl:text-title">{title}</h2>
         {aside}
       </div>
       {children}

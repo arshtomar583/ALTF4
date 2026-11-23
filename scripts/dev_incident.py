@@ -80,6 +80,8 @@ def build_shop_repo(repo: Path, folder: str = "services/shoplite") -> dict[str, 
     ignore = shutil.ignore_patterns("node_modules", ".env*", "*.log")
     root = repo / folder
     shutil.copytree(SHOPLITE, root, ignore=ignore)
+    # The synthetic history should show the faulty line even from a CRLF checkout.
+    (repo / ".gitattributes").write_text("*.js text eol=lf\n")
     (repo / ".gitignore").write_text("node_modules\n")
     git(repo, "init", "-q", "-b", "main")
     healthy = commit(repo, "ShopLite checkout")
