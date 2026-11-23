@@ -54,6 +54,11 @@ class SlotRevisions:
     def healthy_revision(self) -> str:
         return self._git(self.repo, "rev-parse", "--verify", f"{HEALTHY_REF}^{{commit}}")
 
+    def promote(self, slot: Slot, revision: str) -> None:
+        if self.revision(slot) != revision:
+            raise RevisionError("The active slot no longer runs the requested revision")
+        self._git(self.repo, "update-ref", HEALTHY_REF, revision)
+
     def revision(self, slot: Slot) -> str:
         return (self.root / f"slot-{slot}.revision").read_text(encoding="ascii").strip()
 

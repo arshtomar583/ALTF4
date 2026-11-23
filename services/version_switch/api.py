@@ -29,6 +29,10 @@ class Deployment(BaseModel):
     expected_active_slot: Slot
 
 
+class Promotion(BaseModel):
+    revision: Annotated[str, Field(pattern=r"^[0-9a-f]{40}$")]
+
+
 def save_state(path: Path, state: SwitchState) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = None
@@ -130,6 +134,18 @@ async def deploy(slot: Slot, deployment: Deployment) -> dict[str, str]:
                 pass
             await asyncio.sleep(0.15)
         raise HTTPException(status_code=503, detail=f"Slot {slot} did not start the requested revision")
+
+
+@app.put("/slots/{slot}/healthy")
+async def promote(slot: Slot, promotion: Promotion) -> dict[str, str]:
+    revisions = revision_store()
+    async with app.state.mutation_lock:
+        verify_active_slot(slot)
+        try:
+            await asyncio.to_thread(revisions.promote, slot, promotion.revision)
+        except RevisionError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"healthy_rev": promotion.revision}
 
 
 @app.post("/checkout")
