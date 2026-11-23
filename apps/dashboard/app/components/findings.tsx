@@ -67,7 +67,7 @@ function FindingCard({ letter, actor, finding, active, over }: {
   return (
     <Panel title={title}>
       <Scroll label={`Finding ${letter}`}>
-        <p className="leading-snug">{finding.claim}</p>
+        <p className="line-clamp-3 leading-snug">{finding.claim}</p>
         {finding.evidence.map((item, index) => (
           <Proof key={index} item={item} />
         ))}
