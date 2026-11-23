@@ -27,8 +27,8 @@ You see only runtime signals: logs, configuration and the public web. You cannot
 
 1. Read container_logs for the broken slot. It may return a lab replay of the same failing request; if
    it has nothing at all, read lab_logs for the broken revision.
-2. Copy the exact error string out of the logs and web_search that string.
-3. Call config_diff from the healthy revision to the broken revision.
+2. Then, in one turn with parallel calls: web_search the exact error string from the logs, and call
+   config_diff from the healthy revision to the broken revision.
 
 Submit a finding:
 - claim: one or two short sentences a shop owner understands. Say whether configuration changed.
@@ -175,6 +175,7 @@ async def investigate(lab: Lab, ctx: IncidentContext, question: str | None = Non
         model=fast_model(),
         output_model=Finding,
         incident_id=ctx.incident_id,
+        max_turns=6,
         check=check,
     )
     finding = finding.model_copy(update={"agent": NAME})

@@ -25,8 +25,8 @@ about how it was made. Prove whether it fixes the failing request.
    { test } from "node:test". Send the failing request to createShop("check") and assert the exact status
    and the exact business values, such as totals, that healthy returned. Do not assert revision ids,
    dates or random ids.
-3. run_regression on broken, healthy and candidate. It must fail on broken and pass on healthy; if not,
-   rewrite it.
+3. The result for each version comes back. It must fail on broken and pass on healthy; if not, rewrite
+   it.
 4. Review the candidate diff.
 5. Submit. diff_review_ok is false if the diff deletes or skips tests or assertions, swallows errors,
    hard-codes totals or prices, hides a wrong total, or changes anything unrelated. List each problem.
@@ -210,7 +210,7 @@ async def verify(lab: Lab, ctx: IncidentContext, candidate_id: str, rev: str) ->
             model=strong_model(),
             output_model=Review,
             incident_id=ctx.incident_id,
-            max_turns=10,
+            max_turns=8,
             check=check,
         )
 

@@ -13,15 +13,15 @@ from .base import note, strong_model
 from .models import Candidate, Decision, IncidentContext, Verification
 
 NAME = "repair"
+MAX_SOURCE = 12_000
 SYSTEM = """You are the Repair agent on an incident team. A bad change broke checkout on the broken
 revision, and your worktree starts from it. Fix the cause with the smallest possible change.
 
-1. read_file the file the suspect diff changed.
-2. write_file the whole file back with a minimal edit in src/. Keep every unrelated line exactly as is,
-   and keep later good changes: do not roll the file back.
-3. run_unit_tests, and fix anything they catch.
-4. commit_candidate with a short message.
-5. Submit a one or two sentence rationale.
+1. The current source files are below. write_file the whole file back with a minimal edit in src/. Keep
+   every unrelated line exactly as is, and keep later good changes: do not roll the file back.
+2. The unit tests run with every write. If they fail, the failing expectations are right: fix the source.
+3. commit_candidate with a short message.
+4. Submit a one or two sentence rationale.
 
 Never edit tests, never swallow errors in a catch block, never hard-code totals or prices, and never
 branch on the environment. An independent verifier rejects all of these.
@@ -63,6 +63,8 @@ async def repair(
         f"Failing request: {ctx.failing_request.model_dump_json()}\n"
         f"Suspect diff:\n{await suspect_diff(lab, ctx, decision)}"
     )
+    for source in sorted(path.glob("src/**/*.js")):
+        prompt += f"\n\nFile {source.relative_to(path)}:\n{source.read_text()[:MAX_SOURCE]}"
     if previous:
         prompt += (
             f"\n\nYour previous fix was rejected: {previous.reason}\n"
@@ -76,7 +78,7 @@ async def repair(
         model=strong_model(),
         output_model=Rationale,
         incident_id=ctx.incident_id,
-        max_turns=10,
+        max_turns=8,
         check=check,
     )
     return Candidate(

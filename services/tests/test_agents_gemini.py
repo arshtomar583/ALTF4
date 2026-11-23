@@ -1,7 +1,9 @@
 """Drive the real Gemini SDK against a local server, so the wire format is checked."""
 
+import asyncio
 import json
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
@@ -58,6 +60,9 @@ def server(tmp_path, monkeypatch):
     monkeypatch.setenv("MODEL_FALLBACKS", "")
     llm.gemini_client.cache_clear()
     monkeypatch.setattr(llm, "_busy_until", {})
+    monkeypatch.setattr(llm, "limiter", llm.Limiter())
+    monkeypatch.setenv("PHOENIX_LLM_RPM", "1000")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     yield turns, sent
     http.shutdown()
     http.server_close()
@@ -116,7 +121,8 @@ async def test_rate_limit_waits_as_asked_and_retries_once(server, monkeypatch):
     monkeypatch.setattr(llm.asyncio, "sleep", sleep)
     turns += [fail(429, {"retryDelay": "7s"}), say(("submit", DECISION))]
     await run()
-    assert waits == [7]
+    assert [wait for wait in waits if wait != 0.05] == [7]
+    assert any(event["summary"] == "Waiting for model quota (7s)…" for event in bridge.events())
 
     turns += [fail(503), fail(503)]
     with pytest.raises(llm.AgentFailed, match="503"):
@@ -192,3 +198,77 @@ async def test_schemas_are_self_contained():
     schema = llm._inline_refs(Finding.model_json_schema())
     assert "$ref" not in json.dumps(schema) and "$defs" not in schema
     assert schema["properties"]["evidence"]["items"]["properties"]["kind"]["enum"]
+
+
+async def test_repeated_rate_limits_back_off_then_fail(server, monkeypatch):
+    turns, _ = server
+    waits = []
+
+    async def sleep(seconds):
+        waits.append(seconds)
+
+    monkeypatch.setattr(llm.asyncio, "sleep", sleep)
+    turns += [fail(429)] * 4
+    with pytest.raises(llm.ModelUnavailable):
+        await run()
+    assert [wait for wait in waits if wait >= 1][:2] == [2, 4]
+
+
+async def test_claude_takes_over_when_gemini_is_unavailable(server, monkeypatch):
+    turns, _ = server
+    quota = fail(429, {"violations": [{"quotaId": "GenerateRequestsPerDayPerProject"}]})
+    turns += [quota]
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    asked = []
+
+    async def ask(self, usage):
+        asked.append(self.request["model"])
+        usage["out"] += 1
+        return [llm.Call("c", "submit", DECISION)]
+
+    monkeypatch.setattr(llm.ClaudeChat, "ask", ask)
+    assert (await run()).remedy == "code_fix"
+    assert asked == ["claude-sonnet-5-5"]
+    assert any("continue on claude-sonnet-5-5" in event["summary"] for event in bridge.events())
+
+
+async def test_limiter_holds_rate_concurrency_and_priority(monkeypatch):
+    monkeypatch.setenv("PHOENIX_LLM_RPM", "3")
+    monkeypatch.setenv("PHOENIX_LLM_CONCURRENCY", "1")
+    monkeypatch.setattr(llm, "WINDOW", 0.6)
+    limiter, order, running = llm.Limiter(), [], []
+
+    async def call(name, level):
+        llm.priority.set(level)
+        async with limiter.slot(rated=True):
+            order.append((name, time.monotonic()))
+            running.append(limiter.running)
+            await asyncio.sleep(0.02)
+
+    tasks = [asyncio.create_task(call("first", 0))]
+    await asyncio.sleep(0.01)
+    tasks += [asyncio.create_task(call(f"judge{n}", llm.LOW_PRIORITY)) for n in range(2)]
+    tasks += [asyncio.create_task(call(f"main{n}", 0)) for n in range(2)]
+    await asyncio.gather(*tasks)
+    names = [name for name, _ in order]
+    assert names == ["first", "main0", "main1", "judge0", "judge1"]
+    assert max(running) == 1
+    assert order[3][1] - order[0][1] >= 0.55
+
+
+async def test_cancelled_caller_leaves_the_queue(monkeypatch):
+    monkeypatch.setenv("PHOENIX_LLM_CONCURRENCY", "1")
+    limiter = llm.Limiter()
+
+    async def call():
+        async with limiter.slot(rated=False):
+            await asyncio.sleep(0.05)
+
+    first, waiting = asyncio.create_task(call()), None
+    await asyncio.sleep(0.01)
+    waiting = asyncio.create_task(call())
+    await asyncio.sleep(0.01)
+    waiting.cancel()
+    await asyncio.gather(first, waiting, return_exceptions=True)
+    assert limiter.queue == [] and limiter.running == 0
+    await asyncio.wait_for(call(), 1)

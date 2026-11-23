@@ -154,8 +154,9 @@ async def test_commit_needs_tests_on_the_final_content(lab, revs):
         await workspace.commit_candidate("early")
     fixed = (await workspace.read_file("src/shop.js")).replace(BAD, FIX)
     await workspace.write_file("src/shop.js", fixed)
-    assert (await workspace.run_unit_tests())["ok"]
-    await workspace.write_file("src/shop.js", fixed + "\n")
+    assert workspace.tested
+    written = await workspace.write_file("src/shop.js", "export {};\n")
+    assert not written["unit_tests"]["ok"]
     with pytest.raises(PermissionError, match="Unit tests"):
         await workspace.commit_candidate("stale")
 

@@ -356,7 +356,7 @@ async def test_paraphrasing_agent_keeps_its_finding(monkeypatch, lab, ctx, revs)
     prompts = script(monkeypatch, {
         "code": [
             ("git_bisect", {"good": revs["healthy"], "bad": revs["broken"]}),
-            *[("git_log", {})] * 5,
+            *[("git_log", {})] * 3,
             # A missing SHA and a misquote each get their own re-ask, past the turn limit.
             ("submit", bad | {"suspect_ref": "main"}),
             ("submit", bad),

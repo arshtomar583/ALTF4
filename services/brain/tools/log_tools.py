@@ -1,13 +1,21 @@
 """Log readers for the Runtime Investigator."""
 
 import asyncio
+import re
 from pathlib import Path
 
 from .. import lab as lab_module
 from ..lab import Lab, LabError
 from ..llm import Tool
 
-TAIL = 3_500
+TAIL = 2_000
+LIBRARY_FRAME = re.compile(r"^\s+at .*(node_modules|node:)")
+
+
+def compact(text: str) -> str:
+    """Drop library stack frames, which push the shop's own lines out of the limit."""
+    lines = [line for line in text.splitlines(keepends=True) if not LIBRARY_FRAME.match(line)]
+    return "".join(lines)[-TAIL:]
 
 
 async def container_logs(slot: str, since_s: int = 120) -> str | dict:
@@ -20,7 +28,7 @@ async def container_logs(slot: str, since_s: int = 120) -> str | dict:
             cwd=Path.cwd(), timeout=10,
         )
         if code == 0 and output.strip():
-            return output[-TAIL:]
+            return compact(output)
         reason = output.strip()[:200] or "docker returned no logs"
     except (OSError, LabError) as error:
         reason = str(error)
@@ -28,7 +36,7 @@ async def container_logs(slot: str, since_s: int = 120) -> str | dict:
     if path.exists():
         text = await asyncio.to_thread(path.read_text, errors="replace")
         if text.strip():
-            return text[-TAIL:]
+            return compact(text)
     return {"error": f"No logs for slot {slot}: {reason}"}
 
 
@@ -41,11 +49,11 @@ def log_tools(lab: Lab, broken_slot: str, broken_rev: str) -> list[Tool]:
         text = lab.logs(await lab.resolve(broken_rev))
         if not text.strip():
             return output
-        return {"source": f"lab replay of the failing request on {broken_rev[:12]}", "logs": text[-TAIL:]}
+        return {"source": f"lab replay of the failing request on {broken_rev[:12]}", "logs": compact(text)}
 
     async def lab_logs(rev: str) -> str | dict:
         text = lab.logs(await lab.resolve(rev))
-        return text[-TAIL:] if text.strip() else {"error": f"The lab has no logs for {rev}"}
+        return compact(text) if text.strip() else {"error": f"The lab has no logs for {rev}"}
 
     return [
         Tool(
