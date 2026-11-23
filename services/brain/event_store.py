@@ -374,7 +374,7 @@ class EventStore:
                 return
             db.execute(
                 "UPDATE incidents SET status = ? WHERE id = ? AND status = 'releasing'",
-                ("released" if ok else "restored", incident.id),
+                ("resolved" if ok else "restored", incident.id),
             )
             db.execute(
                 "INSERT INTO steps (incident_id, step, completed_at, payload) VALUES (?, ?, ?, ?)",
@@ -387,4 +387,26 @@ class EventStore:
                 incident_id=incident.id,
                 actor="release",
                 summary="Verified checkout fix released" if ok else "Candidate release stopped",
+            )
+            if ok:
+                self._close(db, incident.id, "resolved", active_slot, active_rev)
+
+    def close_escalated(self, incident_id: str, *, active_slot: str, active_rev: str) -> None:
+        """Hand an incident to a human. Checkout already runs on the healthy revision."""
+        with self._connect() as db:
+            self._close(db, incident_id, "escalated", active_slot, active_rev)
+
+    def _close(self, db: sqlite3.Connection, incident_id: str, status: str, slot: str, revision: str) -> None:
+        closed = db.execute(
+            "UPDATE incidents SET status = ?, closed_at = ? WHERE id = ? AND closed_at IS NULL AND status != 'releasing'",
+            (status, datetime.now(timezone.utc).isoformat(), incident_id),
+        )
+        if closed.rowcount:
+            self._insert_event(
+                db,
+                "incident.closed",
+                {"status": status, "active_slot": slot, "active_rev": revision},
+                incident_id=incident_id,
+                actor="coordinator",
+                summary=f"Incident closed: checkout healthy on slot {slot.upper()} @ {revision[:7]}",
             )

@@ -173,8 +173,8 @@ async def test_restart_before_any_restore_or_incident_does_nothing(store):
 
 async def test_report_is_published_once(store, incident, monkeypatch):
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
-    await pipeline.publish_report(incident)
-    await pipeline.publish_report(incident)
+    await pipeline.report_release(incident)
+    await pipeline.report_release(incident)
     assert types().count("report.ready") == 1
     assert "# Incident report" in report.render(incident.id)
 
@@ -193,3 +193,71 @@ async def test_engine_hooks_run_in_the_background(store, incident):
     gate.set()
     await asyncio.gather(*engine.hook_tasks)
     assert seen == [incident.id]
+
+
+def release(store, incident, revision="f" * 40):  # noqa: F811
+    store.emit(
+        "candidate.proposed", {"candidate_id": "x", "rev": revision},
+        incident_id=incident.id, actor="repair", summary="p",
+    )
+    store.emit(
+        "verification.done", {"candidate_id": "x", "rev": revision, "verdict": "VERIFIED"},
+        incident_id=incident.id, actor="verifier", summary="v",
+    )
+    record = store.approve_candidate(incident.id, "x")
+    store.plan_release(record.id, "b")
+    return record
+
+
+async def test_release_closes_the_incident_and_another_can_open(store, incident, revs):  # noqa: F811
+    record = release(store, incident)
+    store.finish_release(incident, record, active_slot="a", active_rev="f" * 40)
+    assert store.current_incident() is None
+    closed = bridge.events()[-1]
+    assert closed["type"] == "incident.closed" and closed["data"]["status"] == "resolved"
+    assert closed["summary"] == "Incident closed: checkout healthy on slot A @ fffffff"
+    store.open_incident(
+        broken_slot="a", broken_rev=revs["broken"], healthy_rev="f" * 40,
+        failing_request={"method": "POST", "path": "/checkout", "body": CART},
+    )
+    assert store.current_incident().id != incident.id
+
+
+async def test_failed_release_keeps_the_incident_open(store, incident):
+    record = release(store, incident)
+    store.finish_release(incident, record, active_slot="b", active_rev="e" * 40, failure="probe failed")
+    assert store.current_incident().status == "restored"
+
+
+async def test_escalation_closes_the_incident_once(store, incident, monkeypatch):
+    async def escalate(_):
+        return PipelineOutcome(status="escalated")
+
+    monkeypatch.setattr(pipeline, "run_after_restore", escalate)
+    # mark_restored recorded which healthy slot is live.
+    await pipeline.start_for_incident(incident)
+    assert store.current_incident() is None
+    closed = [e for e in bridge.events() if e["type"] == "incident.closed"]
+    assert [e["data"]["status"] for e in closed] == ["escalated"]
+    assert "slot B" in closed[0]["summary"]
+    pipeline.close_escalated(incident.id)
+    assert types().count("incident.closed") == 1
+
+
+async def test_restart_between_escalation_and_closing_still_closes(store, incident):
+    async def outcome():
+        return PipelineOutcome(status="escalated").model_dump()
+
+    await bridge.step(incident.id, "outcome", outcome)
+    await pipeline.resume()
+    assert store.current_incident() is None
+
+
+async def test_judge_waits_for_the_pipeline(store, incident, monkeypatch):
+    monkeypatch.setattr(pipeline, "_active", {incident.id})
+    assert pipeline.is_busy(incident.id)
+    store.emit(
+        "verification.done", {"candidate_id": "x", "verdict": "VERIFIED"},
+        incident_id=incident.id, actor="verifier", summary="v",
+    )
+    assert not pipeline.is_busy(incident.id)
