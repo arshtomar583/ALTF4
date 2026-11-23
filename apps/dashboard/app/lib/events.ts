@@ -54,6 +54,7 @@ type Payloads = {
   "chaos.break": object;
   "incident.opened": { broken_slot: string; broken_rev: string; healthy_rev: string; failing_request: unknown };
   "incident.restored": { active_slot: string; active_rev: string; seconds_to_restore: number };
+  "incident.closed": { status: "resolved" | "escalated"; active_slot: string; active_rev: string };
   "system.recovered": { last_step: string | null };
   "agent.note": { usage?: unknown; error?: string };
   "agent.tool": { tool: string; args: object; ok: boolean; result_excerpt: string };

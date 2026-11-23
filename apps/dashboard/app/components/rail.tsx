@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { IncidentState } from "../lib/incident-state";
+import { type IncidentState, pendingJudge } from "../lib/incident-state";
 import { post } from "../lib/use-incident";
 
 export function Rail({ state, incidentOpen, recorded, onReport }: {
@@ -23,7 +23,10 @@ export function Rail({ state, incidentOpen, recorded, onReport }: {
   // The brain knows whether an incident is open; the story is only a fallback.
   const open = incidentOpen ?? state.phase !== "healthy";
   const canBreak = !recorded && !busy && !open && state.phase !== "down";
-  const canChallenge = !recorded && !busy && ["fixing", "verified", "escalated"].includes(state.phase);
+  const waiting = pendingJudge(state);
+  const afterFix = state.phase === "verified";
+  const canChallenge = !recorded && !busy && afterFix && !waiting;
+  const hint = waiting ? "Judge's candidate queued → verifying…" : afterFix ? null : "Available after a verified fix";
 
   return (
     <aside aria-label="Judge controls" className="flex min-h-0 flex-col items-center gap-3 rounded-lg border border-line bg-panel px-3 py-4">
@@ -52,6 +55,7 @@ export function Rail({ state, incidentOpen, recorded, onReport }: {
       >
         Submit a bad candidate (judge)
       </button>
+      <p aria-live="polite" className="-mt-1.5 min-h-10 text-center text-sm text-dim">{recorded ? null : hint}</p>
       <div className="min-h-0 w-full flex-1 overflow-y-auto">
         {problem ? <p role="alert" className="text-sm wrap-anywhere text-busy">⚠ {problem}</p> : null}
       </div>

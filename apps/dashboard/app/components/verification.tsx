@@ -40,7 +40,7 @@ export function Verification({ state, active, recorded }: { state: IncidentState
   const latest = state.candidates.findLast((item) => item.verification) ?? state.candidates.at(-1);
   const first = state.candidates.find((item) => item.verification)?.verification ?? null;
   const releasing = state.phase === "releasing" || sending === candidate?.id;
-  const ready = candidate !== null && state.phase === "verified" && !releasing && !recorded;
+  const ready = candidate !== null && state.phase === "verified" && !state.closed && !releasing && !recorded;
 
   async function approve() {
     if (!candidate || !state.incidentId) return;

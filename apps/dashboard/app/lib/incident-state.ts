@@ -41,6 +41,7 @@ export type IncidentState = {
   candidates: Candidate[];
   releaseProblem: string | null;
   report: { markdown: string; prUrl: string | null } | null;
+  closed: boolean;
   recovered: { id: number; at: number; step: string | null } | null;
 };
 
@@ -66,6 +67,7 @@ export const initialState: IncidentState = {
   candidates: [],
   releaseProblem: null,
   report: null,
+  closed: false,
   recovered: null,
 };
 
@@ -144,6 +146,8 @@ function apply(previous: IncidentState, event: PhoenixEvent): IncidentState {
       return event.data.ok
         ? mark({ ...state, phase: "recovered" }, event.id, "released")
         : { ...state, phase: "verified", releaseProblem: event.data.reason ?? "The release stopped" };
+    case "incident.closed":
+      return { ...state, closed: true, phase: event.data.status === "resolved" ? "recovered" : "escalated" };
     case "report.ready":
       return { ...state, report: { markdown: event.data.markdown, prUrl: event.data.pr_url } };
     default:
@@ -165,6 +169,11 @@ function probe(state: IncidentState, id: number, data: Probe): IncidentState {
     revision: data.revision ?? state.revision,
     failedCheckouts: state.failedCheckouts + (down ? 1 : 0),
   };
+}
+
+/** A judge's candidate the verifier has not answered yet. */
+export function pendingJudge(state: IncidentState): Candidate | null {
+  return state.candidates.find(({ by, verification }) => by === "judge" && !verification) ?? null;
 }
 
 export function approvable(state: IncidentState): Candidate | null {
